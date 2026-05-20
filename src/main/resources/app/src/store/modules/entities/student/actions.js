@@ -35,7 +35,7 @@ export default {
     },
 
     async updateStudent({ commit }, studentData) {
-        console.log('studentData received:', studentData)
+        // console.log('studentData received:', studentData)
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
