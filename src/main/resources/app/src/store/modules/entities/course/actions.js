@@ -7,7 +7,7 @@ export default {
         try {
             const response = await fetch(API_URL)
             const data = await response.json()
-            commit('SET_STUDENTS', data)
+            commit('SET_COURSE', data)
         } catch (error) {
             commit('SET_ERROR', 'Failed to load courses')
         } finally {
@@ -42,10 +42,13 @@ export default {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(courseData)
             })
-            const updatedStudent = await response.json()
-            commit('SET_STUDENTS', updatedStudent)
-        }catch(error) {
+            const updatedCourse = await response.json()
+            commit('UPDATE_COURSE', updatedCourse)
+        } catch(error) {
+            console.log(error)
             commit('SET_ERROR', 'Failed to update course')
+        } finally {
+            commit('SET_LOADING', false)
         }
     },
 
@@ -56,7 +59,7 @@ export default {
             await fetch(`${API_URL}/${courseId}`, {
                 method: 'DELETE'
             })
-            commit('DELETE_STUDENT', courseId)
+            commit('DELETE_COURSE', courseId)
         } catch (error) {
             commit('SET_ERROR', 'Failed to delete course')
         } finally {

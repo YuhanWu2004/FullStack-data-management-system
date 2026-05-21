@@ -9,7 +9,7 @@ export default {
             case 'professor':
                 return ['courses', 'students']
             case 'staff':
-                return ['students', 'courses', 'professors', 'programs']
+                return ['students', 'courses', 'professors', 'programs', 'enrollments', 'assignments']
             default:
                 return []
         }
@@ -22,7 +22,7 @@ export default {
             case 'professor':
                 return ['courses', 'students'].includes(routeName)
             case 'staff':
-                return ['students', 'courses', 'professors', 'programs'].includes(routeName)
+                return ['students', 'courses', 'professors', 'programs', 'enrollments', 'assignments'].includes(routeName)
             default:
                 return false
         }

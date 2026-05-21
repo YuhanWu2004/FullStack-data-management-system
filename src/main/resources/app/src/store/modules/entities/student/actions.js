@@ -20,10 +20,18 @@ export default {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
+            // sanitize data before sending
+            const payload = {
+                firstName: studentData.firstName,
+                lastName: studentData.lastName,
+                gpa: studentData.gpa || null,
+                dateOfBirth: studentData.dateOfBirth || null,  // ← empty string becomes null
+                program: studentData.program || null
+            }
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(studentData)
+                body: JSON.stringify(payload)
             })
             const newStudent = await response.json()
             commit('ADD_STUDENT', newStudent)
@@ -35,7 +43,6 @@ export default {
     },
 
     async updateStudent({ commit }, studentData) {
-        // console.log('studentData received:', studentData)
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {

@@ -1,6 +1,6 @@
 export default {
-    SET_COURSE(state, course) {
-        state.course = course
+    SET_COURSE(state, courses) {
+        state.courses = courses
     },
 
     ADD_COURSE(state, course) {
@@ -8,7 +8,7 @@ export default {
     },
 
     UPDATE_COURSE(state, updatedCourse) {
-        const index = state.courses.findIndex(c => c.id === course.id)
+        const index = state.courses.findIndex(c => c.id === updatedCourse.id)
         if (index >= 0) {
             state.courses[index] = updatedCourse
         }
