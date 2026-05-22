@@ -23,8 +23,9 @@ export default {
             const payload = {
                 firstName: professorData.firstName,
                 lastName: professorData.lastName,
-                department: professorData.department || null
+                program: {id: professorData.programId}
             }
+            console.log("playload", payload)
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -43,10 +44,17 @@ export default {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
+            const payload = {
+                id: professorData.id,
+                firstName: professorData.firstName,
+                lastName: professorData.lastName,
+                program: {id: professorData.programId}
+            }
+            console.log("update professor", payload)
             const response = await fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(professorData)
+                body: JSON.stringify(payload)
             })
             const updatedProfessor = await response.json()
             commit('UPDATE_PROFESSOR', updatedProfessor)

@@ -1,4 +1,5 @@
 export default {
     role: null,
-    name: ''
+    name: '',
+    userId: null
 }

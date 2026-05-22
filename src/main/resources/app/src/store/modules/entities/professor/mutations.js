@@ -5,6 +5,12 @@ export default {
     ADD_PROFESSOR(state, professor) {
         state.professors.push(professor)
     },
+    UPDATE_PROFESSOR(state, updatedProfessor) {
+        const index = state.professors.findIndex(p => p.id === updatedProfessor.id)
+        if (index !== -1) {
+            state.professors[index] = updatedProfessor
+        }
+    },
     DELETE_PROFESSOR(state, id) {
         state.professors = state.professors.filter(a => a.id !== id)
     },
