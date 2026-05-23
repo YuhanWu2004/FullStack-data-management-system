@@ -19,5 +19,14 @@ export default {
     },
     SET_ERROR(state, error) {
         state.error = error
+    },
+    SET_PAGINATION(state, { total, totalPages, page, size }) {
+        state.totalItems = total
+        state.totalPages = totalPages
+        state.currentPage = page
+        state.pageSize = size
+    },
+    SET_PAGE(state, page) {
+        state.currentPage = page
     }
 }

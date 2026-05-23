@@ -1,18 +1,45 @@
 const API_URL = '/api/course'
 
 export default {
-    async fetchCourses({ commit, state, dispatch }) {
+
+    async fetchCourses({ commit, state }, { page, size, searchName, searchId } = {}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
-            const response = await fetch(API_URL)
+            const currentPage = page ?? state.currentPage
+            const pageSize = size ?? state.pageSize
+            let url
+            if (searchId !== undefined && searchId !== null && searchId !== '') {
+                url = `${API_URL}/search/id?value=${searchId}`
+            } else if (searchName && searchName.trim()) {
+                url = `${API_URL}/search/name?value=${encodeURIComponent(searchName)}&page=${currentPage}&size=${pageSize}`
+            } else {
+                url = `${API_URL}?page=${currentPage}&size=${pageSize}`
+            }
+            console.log('fetching:', url)
+            const response = await fetch(url)
             const data = await response.json()
-            commit('SET_COURSE', data)
+            console.log('response:', data)
+
+            commit('SET_COURSES', data.courses)
+            commit('SET_PAGINATION', {
+                total: data.total,
+                totalPages: data.totalPages,
+                page: data.page,
+                size: data.size
+            })
         } catch (error) {
+            console.log('error:', error)
             commit('SET_ERROR', 'Failed to load courses')
         } finally {
             commit('SET_LOADING', false)
         }
+    },
+
+    // change page
+    async changePage({ commit, dispatch, state }, page) {
+        commit('SET_PAGE', page)
+        await dispatch('fetchCourses', { page })
     },
 
     async createCourse({ commit }, courseData) {

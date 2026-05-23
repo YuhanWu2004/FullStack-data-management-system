@@ -1,5 +1,5 @@
 export default {
-    SET_COURSE(state, courses) {
+    SET_COURSES(state, courses) {
         state.courses = courses
     },
 
@@ -16,6 +16,16 @@ export default {
 
     DELETE_COURSE(state, courseId) {
         state.courses = state.courses.filter(c => c.id !== courseId)
+    },
+
+    SET_PAGINATION(state, { total, totalPages, page, size }) {
+        state.totalItems = total
+        state.totalPages = totalPages
+        state.currentPage = page
+        state.pageSize = size
+    },
+    SET_PAGE(state, page) {
+        state.currentPage = page
     },
 
     SET_SELECTED_COURSES(state, courses) {

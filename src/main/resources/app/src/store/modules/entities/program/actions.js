@@ -1,19 +1,46 @@
 const API_URL = 'http://localhost:8080/api/program'
 
 export default {
-    async fetchPrograms({ commit }) {
+    async fetchPrograms({ commit, state }, { page, size, searchName, searchId } = {}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
-            const response = await fetch(API_URL)
+            const currentPage = page ?? state.currentPage
+            const pageSize = size ?? state.pageSize
+            let url
+            if (searchId !== undefined && searchId !== null && searchId !== '') {
+                url = `${API_URL}/search/id?value=${searchId}`
+            } else if (searchName && searchName.trim()) {
+                url = `${API_URL}/search/name?value=${encodeURIComponent(searchName)}&page=${currentPage}&size=${pageSize}`
+            } else {
+                url = `${API_URL}?page=${currentPage}&size=${pageSize}`
+            }
+            const response = await fetch(url)
             const data = await response.json()
-            commit('SET_PROGRAMS', data)
+            // console.log('response:', data)
+
+
+            commit('SET_PROGRAMS', data.programs)
+            commit('SET_PAGINATION', {
+                total: data.total,
+                totalPages: data.totalPages,
+                page: data.page,
+                size: data.size
+            })
+
         } catch (error) {
             commit('SET_ERROR', 'Failed to load programs')
         } finally {
             commit('SET_LOADING', false)
         }
     },
+
+    async changePage({ commit, dispatch, state }, page) {
+        commit('SET_PAGE', page)
+        await dispatch('fetchPrograms', { page })
+    },
+
+
 
     async createProgram({ commit }, programData) {
         commit('SET_LOADING', true)
