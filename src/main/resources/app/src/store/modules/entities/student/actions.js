@@ -38,7 +38,7 @@ export default {
 
             const response = await fetch(url)
             const data = await response.json()
-            console.log('response:', data)
+            console.log('students response:', data)
 
 
             commit('SET_STUDENTS', data.students)

@@ -1,11 +1,31 @@
 const API_URL = 'http://localhost:8080/api/professor'
 
 export default {
-    async fetchProfessors({ commit }) {
+    async fetchProfessors({ commit, state }, { page, size, searchFirstName, searchLastName, searchId }={}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
-            const response = await fetch(API_URL)
+            const currentPage = page ?? state.currentPage
+            const pageSize = size ?? state.pageSize
+            let url
+            if (searchId !== undefined && searchId !== null && searchId !== '') {
+                console.log('searchId: ', searchId)
+                url = `${API_URL}/${searchId}`
+                console.log("url", url)
+
+            } else if ( searchFirstName && searchFirstName.trim()) {
+                url = `${API_URL}/search/firstName?value=${encodeURIComponent(searchFirstName)}&page=${currentPage}&size=${pageSize}`
+            } else if (searchLastName && searchLastName.trim()) {
+                url = `${API_URL}/search/lastName?value=${encodeURIComponent(searchLastName)}&page=${currentPage}&size=${pageSize}`
+            } else {
+                console.log('ELSE case')
+
+                console.log('getting page: ', searchId)
+                url = `${API_URL}?page=${currentPage}&size=${pageSize}`
+                console.log("url", url)
+
+            }
+            const response = await fetch(url)
             const data = await response.json()
             console.log("professor data", data)
             commit('SET_PROFESSORS', data)
@@ -15,6 +35,12 @@ export default {
             commit('SET_LOADING', false)
         }
     },
+
+     async changePage({ commit, dispatch, state }, page) {
+        commit('SET_PAGE', page)
+        await dispatch('fetchProfessors', { page })
+    },
+
 
     async createProfessor({ commit }, professorData) {
         commit('SET_LOADING', true)
