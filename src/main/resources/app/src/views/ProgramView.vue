@@ -41,6 +41,30 @@ const programEnrollmentForm = ref({
   programId: null
 })
 
+
+// ── MODAL AUTOCOMPLETE SEARCH ─────────────────
+const studentSearchQuery = ref('')
+const programSearchQuery = ref('')
+
+const studentSearchResults = ref([])
+const programSearchResults = ref([])
+
+const showStudentDropdown = ref(false)
+const showProgramDropdown = ref(false)
+
+let modalSearchTimeout = null
+
+// --- NEW: Pagination State for Dropdowns ---
+const studentSearchPage = ref(0)
+const studentSearchTotalPages = ref(0)
+const isLoadingMoreStudents = ref(false)
+
+
+const programSearchPage = ref(0)
+const programSearchTotalPages = ref(0)
+const isLoadingMorePrograms = ref(false)
+
+
 // ── FILTERED ──────────────────────────────────
 
 function getStudentCount(programId) {
@@ -48,27 +72,154 @@ function getStudentCount(programId) {
 }
 // ── SEARCH FUNCTIONS ──────────────────────────
 let searchTimeout = null
-watch(searchName, (newVal) => {
+watch([searchName, searchId], (newVal) => {
   clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
     store.dispatch('program/fetchPrograms', {
       page: 0,
       size: 10,
-      searchName: searchName.value
+      searchName: searchName.value,
+      searchId: searchId.value
+
     })
   }, 300)
 })
 
-watch(searchId, (newVal) => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    store.dispatch('program/fetchPrograms', {
-      page: 0,
-      size: 10,
-      searchId: searchId.value
-    })
+
+// --- Student Search ---
+
+function handleStudentSearch() {
+  clearTimeout(modalSearchTimeout)
+  showStudentDropdown.value = true
+
+  modalSearchTimeout = setTimeout(async () => {
+    if (!studentSearchQuery.value) {
+      studentSearchResults.value = []
+      studentSearchPage.value = 0
+      studentSearchTotalPages.value = 0
+      return
+    }
+
+    try {
+      studentSearchPage.value = 0
+      const query = encodeURIComponent(studentSearchQuery.value)
+
+      const res = await fetch(`http://localhost:8080/api/student/search/name?value=${query}&page=0&size=10`)
+      const data = await res.json()
+
+      studentSearchResults.value = data.students || data
+      studentSearchTotalPages.value = data.totalPages || 0
+
+    } catch (error) {
+      console.error("Failed to fetch students for autocomplete", error)
+      studentSearchResults.value = []
+    }
   }, 300)
-})
+}
+
+async function loadMoreStudents() {
+  if (isLoadingMoreStudents.value) return
+  isLoadingMoreStudents.value = true
+
+  try {
+    // Increment the page
+    studentSearchPage.value++
+    const query = encodeURIComponent(studentSearchQuery.value)
+
+    const res = await fetch(`http://localhost:8080/api/student/search/name?value=${query}&page=${studentSearchPage.value}&size=10`)
+    const data = await res.json()
+
+    const newStudents = data.students || data.content || data
+
+    // Append the new students to the end of the existing list
+    studentSearchResults.value = [...studentSearchResults.value, ...newStudents]
+
+  } catch (error) {
+    console.error("Failed to load more students", error)
+    // Revert page increment if the network fails
+    studentSearchPage.value--
+  } finally {
+    isLoadingMoreStudents.value = false
+  }
+}
+
+function selectStudent(student) {
+  programEnrollmentForm.value.studentId = student.id
+  studentSearchQuery.value = `${student.firstName} ${student.lastName}`
+  showStudentDropdown.value = false
+}
+
+
+// --- Program Search ---
+function handleProgramSearch() {
+  clearTimeout(modalSearchTimeout)
+  showProgramDropdown.value = true
+
+  modalSearchTimeout = setTimeout(async () => {
+    if (!programSearchQuery.value) {
+      programSearchResults.value = []
+      programSearchPage.value = 0
+      programSearchTotalPages.value = 0
+      return
+    }
+
+    try {
+      // Reset page to 0 for a brand new search
+      programSearchPage.value = 0
+      const query = encodeURIComponent(programSearchQuery.value)
+
+      const res = await fetch(`http://localhost:8080/api/program/search/name?value=${query}&page=0&size=10`)
+      const data = await res.json()
+
+      // Assign results and track total pages from backend
+      programSearchResults.value = data.programs || data.content || data
+      programSearchTotalPages.value = data.totalPages || 0
+
+    } catch (error) {
+      console.error("Failed to fetch programs for autocomplete", error)
+      programSearchResults.value = []
+    }
+  }, 300)
+}
+
+async function loadMoreCourses() {
+  if (isLoadingMorePrograms.value) return
+  isLoadingMorePrograms.value = true
+
+  try {
+    programSearchPage.value++
+    const query = encodeURIComponent(programSearchQuery.value)
+
+    const res = await fetch(`http://localhost:8080/api/program/search/name?value=${query}&page=${programSearchPage.value}&size=10`)
+    const data = await res.json()
+
+    const newPrograms = data.programs || data.content || data
+
+    // Append the newly fetched programs to the end of the existing list
+    programSearchResults.value = [...programSearchResults.value, ...newPrograms]
+
+  } catch (error) {
+    console.error("Failed to load more programs", error)
+    programSearchPage.value--
+  } finally {
+    isLoadingMorePrograms.value = false
+  }
+}
+
+function selectProgram(program) {
+  programEnrollmentForm.value.programId = program.id
+  programSearchQuery.value = program.name
+  showProgramDropdown.value = false
+}
+
+// Hide dropdowns when clicking outside the input (using a small delay so the click registers first)
+function hideDropdowns() {
+  setTimeout(() => {
+    showStudentDropdown.value = false
+    showProgramDropdown.value = false
+  }, 200)
+}
+
 // ── PAGINATION ────────────────────────────────
 function onPageChanged(page) {
   store.dispatch('program/changePage', page - 1)
@@ -131,6 +282,7 @@ function openEnrollProgramModal() {
 }
 
 async function onEnrollProgramSaved() {
+  console.log("we're hererere!!!")
   if (!validateEnrollProgramForm()) return
   // build the payload — student object with program
   const payload = {
@@ -262,31 +414,67 @@ onMounted(() => {
                 @save="onEnrollProgramSaved"
                 @cancel="showEnrollProgramModal = false"
             >
-              <div class="form-group">
+              <div class="form-group autocomplete-container">
                 <label>Student *</label>
-                <select v-model="programEnrollmentForm.studentId">
-                  <option value="" disabled>Select a student</option>
-                  <option
-                      v-for="student in students"
+                <input
+                    v-model="studentSearchQuery"
+                    @input="handleStudentSearch"
+                    @blur="hideDropdowns"
+                    placeholder="Type to search student..."
+                    class="autocomplete-input"
+                />
+                <ul v-if="showStudentDropdown && studentSearchResults.length > 0" class="dropdown-list">
+                  <li
+                      v-for="student in studentSearchResults"
                       :key="student.id"
-                      :value="student.id"
+                      @mousedown.prevent="selectStudent(student)"
                   >
                     {{ student.firstName }} {{ student.lastName }}
-                  </option>
-                </select>
+                  </li>
+
+                  <li
+                      v-if="studentSearchPage < studentSearchTotalPages - 1"
+                      @mousedown.prevent="loadMoreStudents"
+                      class="load-more-item"
+                  >
+                    {{ isLoadingMoreStudents ? 'Loading...' : 'Load more students...' }}
+                  </li>
+                </ul>
+
+                <div v-if="showStudentDropdown && studentSearchResults.length === 0 && studentSearchQuery" class="dropdown-list empty">
+                  No students found
+                </div>
               </div>
-              <div class="form-group">
-                <label>Program *</label>        <!-- ← add this -->
-                <select v-model="programEnrollmentForm.programId">
-                  <option value="" disabled>Select a program</option>
-                  <option
-                      v-for="program in programs"
+
+              <div class="form-group autocomplete-container">
+                <label>Program *</label>
+                <input
+                    v-model="programSearchQuery"
+                    @input="handleProgramSearch"
+                    @blur="hideDropdowns"
+                    placeholder="Type to search program..."
+                    class="autocomplete-input"
+                />
+                <ul v-if="showProgramDropdown && programSearchResults.length > 0" class="dropdown-list">
+                  <li
+                      v-for="program in programSearchResults"
                       :key="program.id"
-                      :value="program.id"
+                      @mousedown.prevent="selectProgram(program)"
                   >
                     {{ program.name }}
-                  </option>
-                </select>
+                  </li>
+
+                  <li
+                      v-if="programSearchPage < programSearchTotalPages - 1"
+                      @mousedown.prevent="loadMorePrograms"
+                      class="load-more-item"
+                  >
+                    {{ isLoadingMorePrograms ? 'Loading...' : 'Load more programs...' }}
+                  </li>
+                </ul>
+                <div v-if="showProgramDropdown && programSearchResults.length === 0 && programSearchQuery" class="dropdown-list empty">
+                  No programs found
+                </div>
               </div>
 
 

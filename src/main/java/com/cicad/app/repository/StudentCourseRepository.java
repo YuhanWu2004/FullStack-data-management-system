@@ -144,7 +144,7 @@ public class StudentCourseRepository {
         String searchPattern = "%" + courseName.toLowerCase() + "%";
         return entityManager
                 .createQuery(
-                        "SELECT sc FROM StudentCourse sc WHERE LOWER(sc.course.courseName) LIKE :name", 
+                        "SELECT sc FROM StudentCourse sc WHERE LOWER(sc.course.name) LIKE :name",
                         StudentCourse.class)
                 .setParameter("name", searchPattern)
                 .setFirstResult(page * size)
@@ -156,7 +156,7 @@ public class StudentCourseRepository {
         String searchPattern = "%" + courseName.toLowerCase() + "%";
         return entityManager
                 .createQuery(
-                        "SELECT COUNT(sc) FROM StudentCourse sc WHERE LOWER(sc.course.courseName) LIKE :name", 
+                        "SELECT COUNT(sc) FROM StudentCourse sc WHERE LOWER(sc.course.name) LIKE :name",
                         Long.class)
                 .setParameter("name", searchPattern)
                 .getSingleResult();

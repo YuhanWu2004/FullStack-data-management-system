@@ -4,7 +4,7 @@ GET http://localhost:8080/api/professor/86
 Accept: application/json
 
 ### Get all students
-GET http://localhost:8080/api/professor/search/firstName?firstName=pgsvrift22
+GET http://localhost:8080/api/enrollment/search/courseName?value=FC 192
 
 Accept: application/json
 

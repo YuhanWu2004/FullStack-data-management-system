@@ -80,7 +80,7 @@ watch(
           searchStudentName: searchStudentName.value,
           searchCourseName: searchCourseName.value
         })
-      }, 500)
+      }, 300)
     }
 )
 

@@ -32,6 +32,7 @@ export default {
             }
             // 6. NEW: Search by Course Name
             else if (searchCourseName && String(searchCourseName).trim() !== '') {
+                console.log("hiii")
                 url = `${API_URL}/search/courseName?value=${encodeURIComponent(searchCourseName)}&page=${currentPage}&size=${pageSize}`
             } 
             // 7. Default: Get all paginated

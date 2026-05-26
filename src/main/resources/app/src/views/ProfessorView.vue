@@ -1,7 +1,6 @@
 <script setup>
 import {ref, computed, onMounted, watch} from 'vue'
 import { useStore } from 'vuex'
-import { usePagination } from '../composables/usePagination'
 import Pagination from '../components/Pagination.vue'
 import DeleteModal from '../components/DeleteModal.vue'
 import EditModal from '../components/EditModal.vue'
@@ -11,7 +10,6 @@ const selectedProfessor = ref(null)
 
 // ── READ FROM STORE ───────────────────────────
 const professors = computed(() => store.getters['professor/professors'])
-const programs = computed(() => store.getters['program/programs'])
 const loading = computed(() => store.getters['professor/loading'])
 const error = computed(() => store.getters['professor/error'])
 
@@ -34,11 +32,90 @@ const form = ref({
   id: null,
   firstName: '',
   lastName: '',
-  programId: ''
+  programId: null
 })
 
+// ── PROGRAM AUTOCOMPLETE ──────────────────────
+const programSearchQuery = ref('')
+const programSearchResults = ref([])
+const showProgramDropdown = ref(false)
+const programSearchPage = ref(0)
+const programSearchTotalPages = ref(0)
+const isLoadingMorePrograms = ref(false)
 
-// ── SEARCH FUNCTIONS ──────────────────────────
+let programSearchTimeout = null
+
+function handleProgramSearch() {
+  clearTimeout(programSearchTimeout)
+  showProgramDropdown.value = true
+
+  programSearchTimeout = setTimeout(async () => {
+    if (!programSearchQuery.value) {
+      programSearchResults.value = []
+      programSearchPage.value = 0
+      programSearchTotalPages.value = 0
+      return
+    }
+
+    try {
+      programSearchPage.value = 0
+      const query = encodeURIComponent(programSearchQuery.value)
+
+      const res = await fetch(`http://localhost:8080/api/program/search/name?value=${query}&page=0&size=10`)
+      const data = await res.json()
+
+      programSearchResults.value = data.programs || data.content || data
+      programSearchTotalPages.value = data.totalPages || 0
+
+    } catch (err) {
+      console.error("Failed to fetch programs for autocomplete", err)
+      programSearchResults.value = []
+    }
+  }, 300)
+}
+
+async function loadMorePrograms() {
+  if (isLoadingMorePrograms.value) return
+  isLoadingMorePrograms.value = true
+
+  try {
+    programSearchPage.value++
+    const query = encodeURIComponent(programSearchQuery.value)
+
+    const res = await fetch(`http://localhost:8080/api/program/search/name?value=${query}&page=${programSearchPage.value}&size=10`)
+    const data = await res.json()
+
+    const newPrograms = data.programs || data.content || data
+    programSearchResults.value = [...programSearchResults.value, ...newPrograms]
+
+  } catch (err) {
+    console.error("Failed to load more programs", err)
+    programSearchPage.value--
+  } finally {
+    isLoadingMorePrograms.value = false
+  }
+}
+
+function selectProgram(program) {
+  form.value.programId = program.id
+  programSearchQuery.value = program.name
+  showProgramDropdown.value = false
+}
+
+function hideProgramDropdown() {
+  setTimeout(() => {
+    showProgramDropdown.value = false
+  }, 200)
+}
+
+function resetProgramSearch() {
+  programSearchQuery.value = ''
+  programSearchResults.value = []
+  programSearchPage.value = 0
+  programSearchTotalPages.value = 0
+}
+
+// ── SEARCH ────────────────────────────────────
 let searchTimeout = null
 
 watch(
@@ -56,6 +133,7 @@ watch(
       }, 500)
     }
 )
+
 // ── PAGINATION ────────────────────────────────
 function onPageChanged(page) {
   store.dispatch('professor/changePage', page - 1)
@@ -86,7 +164,8 @@ function validateForm() {
     return false
   }
   if (!form.value.programId) {
-    formError.value = 'Program ID is required'
+    formError.value = 'Program is required'
+    return false
   }
   formError.value = null
   return true
@@ -97,6 +176,7 @@ function openCreateModal() {
   form.value = { id: null, firstName: '', lastName: '', programId: null }
   formError.value = null
   showCreateModal.value = true
+  resetProgramSearch()
 }
 
 async function onCreateSaved() {
@@ -107,16 +187,16 @@ async function onCreateSaved() {
 
 // ── EDIT ──────────────────────────────────────
 function openEditModal(professor) {
-  form.value = { ...professor }
-  console.log('editing professor:', form.value)
+  form.value = { ...professor, programId: professor.program?.id ?? null }
   selectedProfessor.value = professor
   formError.value = null
   showEditModal.value = true
+  // Pre-fill the search box with the existing program name
+  programSearchQuery.value = professor.program?.name ?? ''
+  programSearchResults.value = []
 }
 
 async function onEditSaved() {
-  console.log('form.value at save time:', form.value)   // ← add this
-  console.log('id at save time:', form.value.id)        // ← add this
   if (!validateForm()) return
   await store.dispatch('professor/updateProfessor', form.value)
   showEditModal.value = false
@@ -138,7 +218,6 @@ async function onDeleteConfirmed() {
 // ── LIFECYCLE ─────────────────────────────────
 onMounted(() => {
   store.dispatch('professor/fetchProfessors')
-  store.dispatch('program/fetchPrograms')
 })
 </script>
 
@@ -202,6 +281,9 @@ onMounted(() => {
       />
     </div>
 
+    <!-- SHARED PROGRAM AUTOCOMPLETE SNIPPET (used in both modals) -->
+    <!-- extracted as an inline template block via v-if on each modal -->
+
     <!-- CREATE MODAL -->
     <EditModal
         v-if="showCreateModal"
@@ -219,18 +301,34 @@ onMounted(() => {
         <label>Last Name *</label>
         <input v-model="form.lastName" placeholder="Last name" />
       </div>
-      <div class="form-group">
+      <div class="form-group autocomplete-container">
         <label>Program *</label>
-        <select v-model="form.programId">
-          <option value="" disabled> Select a program</option>
-          <option
-            v-for="program in programs"
-            :key="program.id"
-            :value="program.id"
-           >
-            {{program.name}}
-          </option>
-        </select>
+        <input
+            v-model="programSearchQuery"
+            @input="handleProgramSearch"
+            @blur="hideProgramDropdown"
+            placeholder="Type to search program..."
+            class="autocomplete-input"
+        />
+        <ul v-if="showProgramDropdown && programSearchResults.length > 0" class="dropdown-list">
+          <li
+              v-for="program in programSearchResults"
+              :key="program.id"
+              @mousedown.prevent="selectProgram(program)"
+          >
+            {{ program.name }}
+          </li>
+          <li
+              v-if="programSearchPage < programSearchTotalPages - 1"
+              @mousedown.prevent="loadMorePrograms"
+              class="load-more-item"
+          >
+            {{ isLoadingMorePrograms ? 'Loading...' : 'Load more programs...' }}
+          </li>
+        </ul>
+        <div v-if="showProgramDropdown && programSearchResults.length === 0 && programSearchQuery" class="dropdown-list empty">
+          No programs found
+        </div>
       </div>
     </EditModal>
 
@@ -251,18 +349,34 @@ onMounted(() => {
         <label>Last Name *</label>
         <input v-model="form.lastName" placeholder="Last name" />
       </div>
-      <div class="form-group">
+      <div class="form-group autocomplete-container">
         <label>Program *</label>
-        <select v-model="form.programId">
-          <option value="" disabled> Select a program</option>
-          <option
-              v-for="program in programs"
+        <input
+            v-model="programSearchQuery"
+            @input="handleProgramSearch"
+            @blur="hideProgramDropdown"
+            placeholder="Type to search program..."
+            class="autocomplete-input"
+        />
+        <ul v-if="showProgramDropdown && programSearchResults.length > 0" class="dropdown-list">
+          <li
+              v-for="program in programSearchResults"
               :key="program.id"
-              :value="program.id"
+              @mousedown.prevent="selectProgram(program)"
           >
-            {{program.name}}
-          </option>
-        </select>
+            {{ program.name }}
+          </li>
+          <li
+              v-if="programSearchPage < programSearchTotalPages - 1"
+              @mousedown.prevent="loadMorePrograms"
+              class="load-more-item"
+          >
+            {{ isLoadingMorePrograms ? 'Loading...' : 'Load more programs...' }}
+          </li>
+        </ul>
+        <div v-if="showProgramDropdown && programSearchResults.length === 0 && programSearchQuery" class="dropdown-list empty">
+          No programs found
+        </div>
       </div>
     </EditModal>
 

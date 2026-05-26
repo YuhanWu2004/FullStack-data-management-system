@@ -176,6 +176,7 @@ function hideDropdowns() {
 
 // ── SEARCH FUNCTIONS ──────────────────────────
 
+let searchTimeout = null
 
 watch(
     [searchProfessorId, searchCourseId, searchId, searchProfessorName, searchCourseName],

@@ -15,7 +15,6 @@ export default {
     },
 
     async fetchStudents({ commit, state }, { page, size, searchName, searchId, searchMinGpa }={}) {
-        console.log(searchFirstName)
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try{
