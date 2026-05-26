@@ -1,4 +1,5 @@
 export default {
+    allPrograms: [],
     programs: [],
     totalItems: 0,
     totalPages: 0,

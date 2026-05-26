@@ -37,5 +37,11 @@ export default {
     },
     SET_PAGE(state, page) {
         state.currentPage = page
-    }
+    },
+    SET_CURRENT_PROFILE(state, profile) {
+        state.currentStudentProfile = profile
+    },
+    SET_ALL_STUDENTS(state, students) {
+        state.allStudents = students     // ← separate from paginated students
+    },
 }

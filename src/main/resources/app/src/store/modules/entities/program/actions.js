@@ -1,6 +1,18 @@
 const API_URL = 'http://localhost:8080/api/program'
 
 export default {
+
+    async fetchAllPrograms({ commit }) {
+        commit('SET_ERROR', null)
+        try {
+            const response = await fetch(`${API_URL}?page=0&size=10000`)  // large size
+            const data = await response.json()
+
+            commit('SET_ALL_PROGRAM', data.programs)
+        } catch (error) {
+            commit('SET_ERROR', 'Failed to load all programs')
+        }
+    },
     async fetchPrograms({ commit, state }, { page, size, searchName, searchId } = {}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)

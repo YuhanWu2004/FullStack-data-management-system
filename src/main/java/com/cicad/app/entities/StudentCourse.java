@@ -3,25 +3,25 @@ package com.cicad.app.entities;
 
 import jakarta.persistence.*;
 
-import java.io.Serial;
-
 @Entity
 @Table(name = "STUDENT_COURSES")
-public class StudentCourses {
+public class StudentCourse {
 
     @Id
     @Column(name = "ID", nullable = false, unique = true, updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "STUDENT_ID")
-    private int student_id;
+    @ManyToOne
+    @JoinColumn(name = "STUDENT_ID")
+    private Student student;
 
-    @Column(name = "COURSE_ID")
-    private int course_id;
+    @ManyToOne
+    @JoinColumn(name = "COURSE_ID")
+    private Course course;
 
     @Column(name = "GRADE")
-    private float grade;
+    private Float grade;
 
     public Integer getId() {
         return id;
@@ -31,27 +31,27 @@ public class StudentCourses {
         this.id = id;
     }
 
-    public int getStudent_id() {
-        return student_id;
+    public Student getStudent() {
+        return student;
     }
 
-    public void setStudent_id(int student_id) {
-        this.student_id = student_id;
+    public void setStudent(Student student) {
+        this.student = student;
     }
 
-    public int getCourse_id() {
-        return course_id;
+    public Course getCourse() {
+        return course;
     }
 
-    public void setCourse_id(int course_id) {
-        this.course_id = course_id;
+    public void setCourse(Course course) {
+        this.course = course;
     }
 
-    public float getGrade() {
+    public Float getGrade() {
         return grade;
     }
 
-    public void setGrade(float grade) {
+    public void setGrade(Float grade) {
         this.grade = grade;
     }
 }

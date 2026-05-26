@@ -1,4 +1,5 @@
 export default {
+    allStudents: (state) => state.allStudents,
     students: (state) => state.students,
     selectedStudent: (state) => state.selectedStudent,
     loading: (state) => state.loading,

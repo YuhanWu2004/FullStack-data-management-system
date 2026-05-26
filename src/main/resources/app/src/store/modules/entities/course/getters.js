@@ -1,4 +1,5 @@
 export default {
+    allCourses: (state) => state.courses,
     courses: (state) => state.courses,
     selectedCourse: (state) => state.selectedCourse,
     loading: (state) => state.loading,

@@ -1,5 +1,6 @@
 package com.cicad.app.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.io.Serial;
@@ -20,7 +21,12 @@ public class Professor {
     @Column(name = "LAST_NAME")
     private String lastName;
 
+    @ManyToOne
+    @JoinColumn(name = "PROGRAM_ID")
+    private Program program;
+
     @OneToMany(mappedBy = "professor")
+    @JsonIgnore
     private List<ProfessorCourse> professorCourses;
 
 
@@ -49,5 +55,19 @@ public class Professor {
         this.lastName = lastName;
     }
 
+    public List<ProfessorCourse> getProfessorCourses() {
+        return professorCourses;
+    }
 
+    public void setProfessorCourses(List<ProfessorCourse> professorCourses) {
+        this.professorCourses = professorCourses;
+    }
+
+    public Program getProgram() {
+        return program;
+    }
+
+    public void setProgram(Program program) {
+        this.program = program;
+    }
 }

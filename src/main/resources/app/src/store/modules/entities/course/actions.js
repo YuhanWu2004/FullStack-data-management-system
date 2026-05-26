@@ -2,6 +2,19 @@ const API_URL = '/api/course'
 
 export default {
 
+    async fetchAllCourses({commit}) {
+        commit('SET_ERROR', null)
+        try {
+            const response = await fetch(`${API_URL}?page=0&size=10000`)  // large size
+            const data = await response.json()
+            console.log(data)
+
+            commit('SET_ALL_COURSES', data.courses)
+        } catch (error) {
+            commit('SET_ERROR', 'Failed to load all courses')
+        }
+    },
+
     async fetchCourses({ commit, state }, { page, size, searchName, searchId } = {}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)

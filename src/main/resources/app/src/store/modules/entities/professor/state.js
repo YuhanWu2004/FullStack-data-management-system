@@ -1,4 +1,5 @@
 export default {
+    allProfessors: [],
     professors: [],
     totalItems: 0,
     totalPages: 0,

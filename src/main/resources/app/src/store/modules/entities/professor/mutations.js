@@ -28,5 +28,8 @@ export default {
     },
     SET_PAGE(state, page) {
         state.currentPage = page
+    },
+    SET_ALL_PROFESSORS(state, allProfessors) {
+        state.allProfessors = allProfessors
     }
 }

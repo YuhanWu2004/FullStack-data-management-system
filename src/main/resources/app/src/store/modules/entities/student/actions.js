@@ -2,6 +2,18 @@ const API_URL = 'http://localhost:8080/api/student'
 
 export default {
 
+    async fetchAllStudents({commit}) {
+        commit('SET_ERROR', null)
+        try {
+            const response = await fetch(`${API_URL}?page=0&size=10000`)
+            const data = await response.json()
+
+            commit('SET_ALL_STUDENTS', data.students)
+        } catch (error) {
+            commit('SET_ERROR', 'Failed to load all students')
+        }
+    },
+
     async fetchStudents({ commit, state }, { page, size, searchFirstName, searchLastName, searchId, searchMinGpa }={}) {
         console.log(searchFirstName)
         commit('SET_LOADING', true)
@@ -20,7 +32,7 @@ export default {
             } else if (searchLastName && searchLastName.trim()) {
                 url = `${API_URL}/search/lastName?value=${encodeURIComponent(searchLastName)}&page=${currentPage}&size=${pageSize}`
             } else if (searchMinGpa && searchMinGpa >= 0 && searchMinGpa <= 4) {
-                console.log('getting gpa: ', searchId)
+                console.log('getting gpa: ', searchMinGpa)
 
 
                 url = `${API_URL}/search/gpaGreater?value=${searchMinGpa}&page=${currentPage}&size=${pageSize}`

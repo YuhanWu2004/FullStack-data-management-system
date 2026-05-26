@@ -38,5 +38,9 @@ export default {
 
     SET_ERROR(state, error) {
         state.error = error
+    },
+
+    SET_ALL_COURSES(state, allCourses) {
+        state.allCourses = allCourses
     }
 }

@@ -1,7 +1,7 @@
 const API_URL = 'http://localhost:8080/api/enrollment'
 
 export default {
-    async fetchEnrollments({ commit, state }, { page, size, searchStudentName, searchCourseName, searchId}={}) {
+    async fetchEnrollments({ commit, state }, { page, size, searchStudentId, searchCourseId, searchId}={}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
@@ -13,14 +13,25 @@ export default {
                 url = `${API_URL}/${searchId}`
                 console.log("url", url)
 
-            } else if ( searchStudentName && searchStudentName.trim()) {
-                url = `${API_URL}/search/studentName?value=${encodeURIComponent(searchStudentName)}&page=${currentPage}&size=${pageSize}`
-            } else if (searchCourseName && searchCourseName.trim()) {
-                url = `${API_URL}/search/courseName?value=${encodeURIComponent(searchCourseName)}&page=${currentPage}&size=${pageSize}`
+            } else if (searchStudentId && String(searchStudentId).trim() !== ''
+                && searchCourseId && String(searchCourseId).trim() !== '') {
+                console.log('StudentId  and courseId');
+
+                url = `${API_URL}/search/StudentIdAndCourseId?studentId=${encodeURIComponent(searchStudentId)}&courseId=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
+                console.log("url", url)
+            }
+            else if ( searchStudentId && String(searchStudentId).trim() !== '') {
+                console.log('StudentId case')
+
+                url = `${API_URL}/search/studentId?value=${encodeURIComponent(searchStudentId)}&page=${currentPage}&size=${pageSize}`
+                console.log("url", url)
+
+            } else if (searchCourseId && String(searchCourseId).trim() !== '') {
+                url = `${API_URL}/search/courseName?value=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
             } else {
                 console.log('ELSE case')
 
-                console.log('getting page: ', searchId)
+                console.log('getting page for enrollment: ', searchId)
                 url = `${API_URL}?page=${currentPage}&size=${pageSize}`
                 console.log("url", url)
 
@@ -28,11 +39,11 @@ export default {
 
             const response = await fetch(url)
             const data = await response.json()
-            console.log('enrollments data:', data)
+            console.log('enrollments data:', data.enrollments)
             console.log('first enrollment:', data[0])           // ← add this
-            console.log('course data:', data[0]?.course)  
+            console.log('course data:', data[0]?.course)
 
-            commit('SET_ENROLLMENTS', data)
+            commit('SET_ENROLLMENTS', data.enrollments)
             commit('SET_PAGINATION', {
                 total: data.total,
                 totalPages: data.totalPages,

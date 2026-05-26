@@ -1,5 +1,6 @@
 package com.cicad.app.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.io.Serial;
@@ -8,10 +9,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "PROGRAMS")
-public class Program implements Serializable {
-
-	@Serial
-	private static final long serialVersionUID = 1L;
+public class Program {
 
 	@Id
 	@Column(name = "ID", nullable = false, unique = true, updatable = false)
@@ -22,6 +20,7 @@ public class Program implements Serializable {
 	private String name;
 
 	@OneToMany(mappedBy = "program")
+	@JsonIgnore
 	private Set<Student> students;
 
 	public Integer getId() {

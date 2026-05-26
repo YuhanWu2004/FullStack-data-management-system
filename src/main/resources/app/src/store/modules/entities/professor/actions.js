@@ -1,6 +1,20 @@
+import {commit} from "lodash/seq";
+
 const API_URL = 'http://localhost:8080/api/professor'
 
 export default {
+
+    async fetchAllProfessors({commit}) {
+        commit('SET_ERROR', null)
+        try {
+            const responds = await fetch(`${API_URL}?page=0&size=10000`)
+            const data = await responds.json()
+            console.log("fetching all professors!", data)
+            commit('SET_ALL_PROFESSORS', data.professors)
+        } catch (error) {
+            commit('SET_ERROR', 'Failed to load all students')
+        }
+    },
     async fetchProfessors({ commit, state }, { page, size, searchFirstName, searchLastName, searchId }={}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
@@ -14,9 +28,9 @@ export default {
                 console.log("url", url)
 
             } else if ( searchFirstName && searchFirstName.trim()) {
-                url = `${API_URL}/search/firstName?value=${encodeURIComponent(searchFirstName)}&page=${currentPage}&size=${pageSize}`
+                url = `${API_URL}/search/firstName?firstName=${encodeURIComponent(searchFirstName)}&page=${currentPage}&size=${pageSize}`
             } else if (searchLastName && searchLastName.trim()) {
-                url = `${API_URL}/search/lastName?value=${encodeURIComponent(searchLastName)}&page=${currentPage}&size=${pageSize}`
+                url = `${API_URL}/search/lastName?lastName=${encodeURIComponent(searchLastName)}&page=${currentPage}&size=${pageSize}`
             } else {
                 console.log('ELSE case')
 
@@ -27,8 +41,14 @@ export default {
             }
             const response = await fetch(url)
             const data = await response.json()
-            console.log("professor data", data)
-            commit('SET_PROFESSORS', data)
+            console.log("professor data", data.professors)
+            commit('SET_PROFESSORS', data.professors)
+            commit('SET_PAGINATION', {
+                total: data.total,
+                totalPages: data.totalPages,
+                page: data.page,
+                size: data.size
+            })
         } catch (error) {
             commit('SET_ERROR', 'Failed to load professors')
         } finally {

@@ -24,6 +24,20 @@ public class ProfessorCourseRepository {
                 .getResultList();
     }
 
+    public List<ProfessorCourse> getPage(int page, int size) {
+        return entityManager
+                .createQuery("SELECT pc FROM ProfessorCourse  pc", ProfessorCourse.class)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public Long countAll() {
+        return entityManager
+                .createQuery("SELECT COUNT(pc) FROM ProfessorCourse pc", Long.class)
+                .getSingleResult();
+    }
+
     public ProfessorCourse create(ProfessorCourse actualProfessorCourse) {
         entityManager.persist(actualProfessorCourse);
         return actualProfessorCourse;
@@ -41,21 +55,48 @@ public class ProfessorCourseRepository {
         }
     }
 
-    public List<ProfessorCourse> findByProfessorId(Integer professorId) {
+    public List<ProfessorCourse> findByProfessorId(Integer professorId, int page, int size) {
         return entityManager.createQuery(
-                "SELECT pc FROM ProfessorCourse pc WHERE pc.professor.id = :professorId", ProfessorCourse.class
-        ).setParameter("professorId", professorId).getResultList();
+                "SELECT pc FROM ProfessorCourse pc WHERE pc.professor.id = :professorId", ProfessorCourse.class)
+                .setParameter("professorId", professorId)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
     }
 
-    public List<ProfessorCourse> findByCourseId(Integer courseId) {
-        return entityManager.createQuery(
-                "SELECT pc FROM ProfessorCourse pc WHERE pc.course.id = :courseId", ProfessorCourse.class
-        ).setParameter("courseId", courseId).getResultList();
+    public Long countByProfessorId(Integer ProfessorId) {
+        return entityManager
+                .createQuery
+                        ("SELECT COUNT(pc) FROM ProfessorCourse pc WHERE pc.professor.id = :id", Long.class)
+
+                .setParameter("id", ProfessorId)
+                .getSingleResult();
     }
 
-    public ProfessorCourse findByProfessorIdAndCourseId (Integer professorId, Integer courseId) {
+    public List<ProfessorCourse> findByCourseId(Integer courseId, int page, int size) {
         return entityManager.createQuery(
-                "SELECT pc FROM ProfessorCourse pc WHERE pc.professor.id = :professorId AND pc.course.id = :courseId ", ProfessorCourse.class
-        ).setParameter("professorId", professorId).setParameter("courseId", courseId).getSingleResult();
+                "SELECT pc FROM ProfessorCourse pc WHERE pc.course.id = :courseId", ProfessorCourse.class)
+                .setParameter("courseId", courseId)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public Long countByCourseId(Integer CourseId) {
+        return entityManager
+                .createQuery
+                        ("SELECT COUNT(pc) FROM ProfessorCourse  pc WHERE pc.course.id = :id", Long.class)
+                .setParameter("id", CourseId)
+                .getSingleResult();
+    }
+
+    public List<ProfessorCourse> findByProfessorIdAndCourseId (Integer professorId, Integer courseId, int page, int size) {
+        return entityManager
+                .createQuery("SELECT pc FROM ProfessorCourse pc WHERE pc.professor.id = :professorId AND pc.course.id = :courseId ", ProfessorCourse.class)
+                .setParameter("professorId", professorId)
+                .setParameter("courseId", courseId)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
     }
 }

@@ -1,0 +1,109 @@
+### Get all students
+GET http://localhost:8080/api/professor/86
+
+Accept: application/json
+
+### Get all students
+GET http://localhost:8080/api/professor/search/firstName?firstName=pgsvrift22
+
+Accept: application/json
+
+###
+
+
+
+POST http://localhost:8080/api/course
+Content-Type: application/json
+
+{
+  "name": "CS 341"
+
+}
+### Get all students
+GET http://localhost:8080/api/professor/search/lastName?lastName=Wu&page=0&size=10
+
+Accept: application/json
+
+###
+
+### Get one student by id
+GET http://localhost:8080/api/assignment/search/ProfessorIdAndCourseId?professorId=86&courseId=235&page=0&size=10
+Accept: application/json
+
+###
+
+### Create a student
+POST http://localhost:8080/api/student
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "dateOfBirth": "2000-01-15",
+  "gpa": 3.8,
+}
+
+###
+
+### Update a student
+PUT http://localhost:8080/api/student
+Content-Type: application/json
+
+{
+  "id": 822,
+  "firstName": "John",
+  "lastName": "Smith",
+  "dateOfBirth": "2000-01-15",
+  "gpa": 3.9,
+  "program": {
+    "id": 39
+  }
+}
+
+###
+
+### Delete a student
+DELETE http://localhost:8080/api/student/822
+
+###
+
+### Find by last name
+GET http://localhost:8080/api/student/search/lastName?value=Smith
+Accept: application/json
+
+###
+
+### Find by first name
+GET http://localhost:8080/api/student/search/firstName?value=John
+Accept: application/json
+
+###
+
+### Find by program id
+GET http://localhost:8080/api/student/search/prorgamId?value=39
+Accept: application/json
+
+###
+
+### Find by gpa
+GET http://localhost:8080/api/course/search/name?value=GANJ 162
+Accept: application/json
+
+### Find by gpa
+GET http://localhost:8080/api/professor
+Accept: application/json
+
+### Find by gpa
+POST http://localhost:8080/api/assignment
+Content-Type: application/json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "dateOfBirth": "2000-01-15",
+  "gpa": 3.9,
+  "program": {
+    "id": 39
+  }
+}
+
+GET http://localhost:8080/api/assignment

@@ -1,5 +1,6 @@
 package com.cicad.app.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -16,9 +17,11 @@ public class Course {
     private String name;
 
     @OneToMany(mappedBy = "course")
+    @JsonIgnore
     private List<StudentCourse> studentCourses;
 
     @OneToMany(mappedBy = "course")
+    @JsonIgnore
     private List<ProfessorCourse> professorCourses;
 
     public Integer getId() {

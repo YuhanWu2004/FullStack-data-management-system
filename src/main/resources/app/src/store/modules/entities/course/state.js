@@ -1,4 +1,5 @@
 export default {
+    allCourses:[],
     courses: [],
     totalItems: 0,
     totalPages: 0,
