@@ -197,5 +197,44 @@ public class StudentCourseService {
         return result;
     }
 
+    public Map<String, Object> findByStudentName(String studentName, int page, int size) {
+        Map<String, Object> result = new HashMap<>();
+
+        // If the search string is empty/null, return empty results or redirect to getStudentCoursePaginated
+        if (studentName == null || studentName.trim().isEmpty()) {
+            return getStudentCoursePaginated(page, size);
+        }
+
+        List<StudentCourse> enrollments = studentCourseRepository.findByStudentName(studentName, page, size);
+        Long total = studentCourseRepository.countByStudentName(studentName);
+
+        result.put("enrollments", enrollments);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("totalPages", total == 0 ? 0 : (int) Math.ceil((double) total / size));
+
+        return result;
+    }
+
+    public Map<String, Object> findByCourseName(String courseName, int page, int size) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (courseName == null || courseName.trim().isEmpty()) {
+             return getStudentCoursePaginated(page, size);
+        }
+
+        List<StudentCourse> enrollments = studentCourseRepository.findByCourseName(courseName, page, size);
+        Long total = studentCourseRepository.countByCourseName(courseName);
+
+        result.put("enrollments", enrollments);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("totalPages", total == 0 ? 0 : (int) Math.ceil((double) total / size));
+
+        return result;
+    }
+
 
 }

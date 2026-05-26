@@ -1,33 +1,40 @@
 const API_URL = 'http://localhost:8080/api/assignment'
 
 export default {
-    async fetchAssignments({ commit, state }, { page, size, searchProfessorId, searchCourseId, searchId }={}) {
+    async fetchAssignments({ commit, state }, { page, size, searchProfessorId, searchCourseId, searchId, searchProfessorName, searchCourseName }={}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
             const currentPage = page ?? state.currentPage
             const pageSize = size ?? state.pageSize
             let url
+            // 1. Exact ID
             if (searchId !== undefined && searchId !== null && searchId !== '') {
-                console.log('searchId: ', searchId)
                 url = `${API_URL}/${searchId}`
-                console.log("url", url)
-
-            } else if (searchProfessorId && String(searchProfessorId).trim() !== ''
-                && searchCourseId && String(searchCourseId).trim() !== '') {
-                console.log('StudentId  and courseId');
-
+            } 
+            // 2. Both IDs
+            else if (searchProfessorId && String(searchProfessorId).trim() !== '' && searchCourseId && String(searchCourseId).trim() !== '') {
                 url = `${API_URL}/search/ProfessorIdAndCourseId?professorId=${encodeURIComponent(searchProfessorId)}&courseId=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
-                console.log("url", url)
-            }else if ( searchCourseId && searchCourseId.trim()) {
-                url = `${API_URL}/search/courseId?value=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
-            } else if (searchProfessorId && searchProfessorId.trim()) {
+            }
+            // 3. Professor ID
+            else if (searchProfessorId && String(searchProfessorId).trim() !== '') {
                 url = `${API_URL}/search/professorId?value=${encodeURIComponent(searchProfessorId)}&page=${currentPage}&size=${pageSize}`
-            } else {
-                console.log('ELSE case')
-                console.log('getting page: ', searchId)
+            } 
+            // 4. Course ID
+            else if (searchCourseId && String(searchCourseId).trim() !== '') {
+                url = `${API_URL}/search/courseId?value=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
+            } 
+            // 5. NEW: Professor Name
+            else if (searchProfessorName && String(searchProfessorName).trim() !== '') {
+                url = `${API_URL}/search/professorName?professorName=${encodeURIComponent(searchProfessorName)}&page=${currentPage}&size=${pageSize}`
+            }
+            // 6. NEW: Course Name
+            else if (searchCourseName && String(searchCourseName).trim() !== '') {
+                url = `${API_URL}/search/courseName?courseName=${encodeURIComponent(searchCourseName)}&page=${currentPage}&size=${pageSize}`
+            } 
+            // 7. Default All
+            else {
                 url = `${API_URL}?page=${currentPage}&size=${pageSize}`
-                console.log("url", url)
             }
 
             const response = await fetch(url)

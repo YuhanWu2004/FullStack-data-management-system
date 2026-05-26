@@ -54,4 +54,12 @@ public class ProfessorController {
 
         return professorService.searchByLastName(lastName, page, size);
     }
+
+    @RequestMapping(value="/search/name", method = RequestMethod.GET)
+    public Object searchByName(@RequestParam String value,
+                               @RequestParam(defaultValue = "0") int page,
+                               @RequestParam(defaultValue = "10") int size) {
+        
+        return professorService.searchByName(value, page, size);
+    }
 }

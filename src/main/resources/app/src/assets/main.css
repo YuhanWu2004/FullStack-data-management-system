@@ -370,3 +370,69 @@ p {
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
+
+
+/* ── ENROLLMENT CREATE MODAL ───────────────────────────────── */
+
+.autocomplete-container {
+  position: relative;
+}
+
+.autocomplete-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.dropdown-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 4px 0 0 0;
+  padding: 0;
+  list-style: none;
+  z-index: 10;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.dropdown-list li {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.dropdown-list li:last-child {
+  border-bottom: none;
+}
+
+.dropdown-list li:hover {
+  background-color: #f5f6fa;
+  color: #3498db;
+}
+
+.dropdown-list.empty {
+  padding: 10px 12px;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+.load-more-item {
+  text-align: center;
+  font-weight: bold;
+  color: #3498db;
+  background-color: #f8f9fa;
+  border-top: 1px solid #ddd;
+}
+
+.load-more-item:hover {
+  background-color: #e9ecef;
+  color: #2980b9;
+}

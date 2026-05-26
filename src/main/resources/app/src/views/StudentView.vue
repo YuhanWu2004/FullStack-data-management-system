@@ -20,8 +20,7 @@ const currentPage = computed(() => store.getters['student/currentPage'])
 const pageSize = computed(() => store.getters['student/pageSize'])
 
 // ── SEARCH ───────────────────────────────────
-const searchFirstName = ref('')
-const searchLastName = ref('')
+const searchName = ref('')
 const searchId = ref('')
 const searchMinGpa = ref('')
 
@@ -42,62 +41,35 @@ const form = ref({
 
 // ── SEARCH FUNCTIONS ──────────────────────────
 let searchTimeout = null
-watch(searchFirstName, (newVal) => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    store.dispatch('student/fetchStudents', {
-      page: 0,
-      size: 10,
-      searchFirstName: searchFirstName.value
-    })
-  }, 500)
-})
+watch(
+  [searchName, searchId, searchMinGpa], 
+    () => {
+      clearTimeout(searchTimeout)
 
-watch(searchLastName, (newVal) => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    store.dispatch('student/fetchStudents', {
-      page: 0,
-      size: 10,
-      searchLastName: searchLastName.value
-    })
-  }, 500)
-})
-watch(searchId, (newVal) => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    store.dispatch('student/fetchStudents', {
-      page: 0,
-      size: 10,
-      searchId: searchId.value
-    })
-  }, 300)
-})
-
-watch(searchMinGpa, (newVal) => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    store.dispatch('student/fetchStudents', {
-      page: 0,
-      size: 10,
-      searchMinGpa: searchMinGpa.value
-    })
-  }, 300)
-})
+      searchTimeout = setTimeout(() => {
+        store.dispatch('student/fetchStudents', {
+          page: 0,
+          size: 10,
+          searchName: searchName.value, // Passes the unified string
+          searchId: searchId.value,
+          searchMinGpa: searchMinGpa.value
+        })
+      }, 300)
+    }
+)
 
 // ── PAGINATION ────────────────────────────────
 function onPageChanged(page) {
   store.dispatch('student/changePage', page - 1)
 }
 function resetPage() {
-  currentPage.value = 1    // call this when search changes
+  currentPage.value = 1 
 }
 
 
 // ── SEARCH FUNCTIONS ──────────────────────────
 function clearSearch() {
-  searchFirstName.value = ''
-  searchLastName.value = ''
+  searchName.value = ''
   searchId.value = ''
   searchMinGpa.value = ''
   store.dispatch('student/fetchStudents', { page: 0, size: 10})
@@ -196,13 +168,8 @@ onMounted(() => {
           @input="onSearchInput"
       />
       <input
-          v-model="searchFirstName"
-          placeholder="Search by first name"
-          @input="onSearchInput"
-      />
-      <input
-          v-model="searchLastName"
-          placeholder="Search by last name"
+          v-model="searchName"
+          placeholder="Search by name"
           @input="onSearchInput"
       />
       <input

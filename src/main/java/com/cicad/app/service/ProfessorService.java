@@ -103,6 +103,28 @@ public class ProfessorService {
         }
     }
 
+
+
+
+    public Map<String, Object> searchByName(String name, int page, int size) {
+        // Fall back to all professors if the search box is cleared
+        if (name == null || name.trim().isEmpty()) {
+            return getProfessorsPaginated(page, size);
+        }
+
+        List<Professor> professors = professorRepository.searchByName(name, page, size);
+        Long total = professorRepository.countByName(name);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("professors", professors);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("totalPages", total == 0 ? 0 : (int) Math.ceil((double) total / size));
+        
+        return result;
+    }
+
     public Map<String, Object> searchByLastName(String name, int page, int size) {
         if (name == null || name.isEmpty()) {
             throw new RuntimeException("Professor not found with name: " + name);

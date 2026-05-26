@@ -61,6 +61,22 @@ public class ProfessorCourseController {
         return professorCourseService.findByProfessorIdAndCourseId(professorId, courseId, page, size);
     }
 
+    @RequestMapping(value = "/search/professorName", method = RequestMethod.GET)
+    public Object searchByProfessor(
+            @RequestParam(required = false, defaultValue = "") String professorName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return professorCourseService.searchByProfessorName(professorName, page, size);
+    }
+    
+    @RequestMapping(value = "/search/courseName", method = RequestMethod.GET)
+    public Object searchByCourse(
+            @RequestParam(required = false, defaultValue = "") String courseName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return professorCourseService.searchByCourseName(courseName, page, size);
+    }
+
 
 
 }

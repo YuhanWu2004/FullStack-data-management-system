@@ -21,8 +21,7 @@ const currentPage = computed(() => store.getters['professor/currentPage'])
 const pageSize = computed(() => store.getters['professor/pageSize'])
 
 // ── SEARCH ────────────────────────────────────
-const searchFirstName = ref('')
-const searchLastName = ref('')
+const searchName = ref('')
 const searchId = ref('')
 
 // ── MODAL ─────────────────────────────────────
@@ -38,27 +37,12 @@ const form = ref({
   programId: ''
 })
 
-// ── FILTERED ──────────────────────────────────
-const filteredProfessors = computed(() => {
-  return professors.value.filter(professor => {
-    const matchFirst = (professor.firstName || '')
-        .toLowerCase()
-        .includes(searchFirstName.value.toLowerCase())
-    const matchLast = (professor.lastName || '')
-        .toLowerCase()
-        .includes(searchLastName.value.toLowerCase())
-    const matchId = searchId.value === ''
-        ? true
-        : String(professor.id).includes(String(searchId.value))
-    return matchFirst && matchLast && matchId
-  })
-})
 
 // ── SEARCH FUNCTIONS ──────────────────────────
 let searchTimeout = null
 
 watch(
-    [searchFirstName, searchLastName, searchId],
+    [searchName, searchId],
     () => {
       clearTimeout(searchTimeout)
 
@@ -66,8 +50,7 @@ watch(
         store.dispatch('professor/fetchProfessors', {
           page: 0,
           size: 10,
-          searchFirstName: searchFirstName.value,
-          searchLastName: searchLastName.value,
+          searchName: searchName.value,
           searchId: searchId.value
         })
       }, 500)
@@ -83,10 +66,9 @@ function resetPage() {
 
 // ── SEARCH FUNCTIONS ──────────────────────────
 function clearSearch() {
-  searchFirstName.value = ''
-  searchLastName.value = ''
+  searchName.value = ''
   searchId.value = ''
-  store.dispatch('professor/fetchAssignments', {page: 0, size: 10})
+  store.dispatch('professor/fetchProfessors', {page: 0, size: 10})
 }
 
 function onSearchInput() {
@@ -177,8 +159,7 @@ onMounted(() => {
 
     <div class="search-bar">
       <input v-model="searchId" placeholder="Search by ID" type="number" @input="onSearchInput" />
-      <input v-model="searchFirstName" placeholder="Search by first name" @input="onSearchInput" />
-      <input v-model="searchLastName" placeholder="Search by last name" @input="onSearchInput" />
+      <input v-model="searchName" placeholder="Search by name" @input="onSearchInput" />
       <button @click="clearSearch" class="clear-btn">Clear</button>
     </div>
 

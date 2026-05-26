@@ -10,12 +10,6 @@ const store = useStore()
 
 // ── READ FROM STORE ───────────────────────────
 const enrollments = computed(() => store.getters['enrollment/enrollments'])
-const students = computed(() => store.getters['student/students'])
-const allStudents = computed(() => store.getters['student/allStudents'])
-const courses = computed(() => store.getters['course/courses'])
-const allCourses = computed(() => store.getters['course/allCourses'])
-const programs = computed(() => store.getters['program/programs'])
-const allPrograms = computed(() => store.getters['program/allPrograms'])
 const loading = computed(() => store.getters['assignment/loading'])
 const error = computed(() => store.getters['assignment/error'])
 
@@ -45,15 +39,34 @@ const form = ref({
   grade: null
 })
 
+// ── MODAL AUTOCOMPLETE SEARCH ─────────────────
+const studentSearchQuery = ref('')
+const courseSearchQuery = ref('')
 
+const studentSearchResults = ref([])
+const courseSearchResults = ref([])
+
+const showStudentDropdown = ref(false)
+const showCourseDropdown = ref(false)
+
+let modalSearchTimeout = null
+
+// --- NEW: Pagination State for Dropdowns ---
+const studentSearchPage = ref(0)
+const studentSearchTotalPages = ref(0)
+const isLoadingMoreStudents = ref(false)
+
+
+const courseSearchPage = ref(0)
+const courseSearchTotalPages = ref(0)
+const isLoadingMoreCourses = ref(false)
 
 // ── FILTERED ────────────────────────────────
 
 // ── SEARCH FUNCTIONS ──────────────────────────
 let searchTimeout = null
-
 watch(
-    [searchStudentId, searchCourseId, searchId],
+    [searchStudentId, searchCourseId, searchId, searchStudentName, searchCourseName],
     () => {
       clearTimeout(searchTimeout)
 
@@ -63,11 +76,149 @@ watch(
           size: 10,
           searchStudentId: searchStudentId.value,
           searchCourseId: searchCourseId.value,
-          searchId: searchId.value
+          searchId: searchId.value,
+          searchStudentName: searchStudentName.value,
+          searchCourseName: searchCourseName.value
         })
       }, 500)
     }
 )
+
+
+// --- Student Search ---
+
+function handleStudentSearch() {
+  clearTimeout(modalSearchTimeout)
+  showStudentDropdown.value = true
+  
+  modalSearchTimeout = setTimeout(async () => {
+    if (!studentSearchQuery.value) {
+      studentSearchResults.value = []
+      studentSearchPage.value = 0
+      studentSearchTotalPages.value = 0
+      return
+    }
+    
+    try {
+      studentSearchPage.value = 0
+      const query = encodeURIComponent(studentSearchQuery.value)
+
+      const res = await fetch(`http://localhost:8080/api/student/search/name?value=${query}&page=0&size=10`)
+      const data = await res.json()
+      
+      studentSearchResults.value = data.students || data
+      studentSearchTotalPages.value = data.totalPages || 0
+      
+    } catch (error) {
+      console.error("Failed to fetch students for autocomplete", error)
+      studentSearchResults.value = []
+    }
+  }, 300)
+}
+
+async function loadMoreStudents() {
+  if (isLoadingMoreStudents.value) return
+  isLoadingMoreStudents.value = true
+
+  try {
+    // Increment the page
+    studentSearchPage.value++ 
+    const query = encodeURIComponent(studentSearchQuery.value)
+
+    const res = await fetch(`http://localhost:8080/api/student/search/name?value=${query}&page=${studentSearchPage.value}&size=10`)
+    const data = await res.json()
+    
+    const newStudents = data.students || data.content || data
+    
+    // Append the new students to the end of the existing list
+    studentSearchResults.value = [...studentSearchResults.value, ...newStudents]
+    
+  } catch (error) {
+    console.error("Failed to load more students", error)
+    // Revert page increment if the network fails
+    studentSearchPage.value-- 
+  } finally {
+    isLoadingMoreStudents.value = false
+  }
+}
+
+function selectStudent(student) {
+  form.value.studentId = student.id
+  studentSearchQuery.value = `${student.firstName} ${student.lastName}`
+  showStudentDropdown.value = false
+}
+
+
+// --- Course Search ---
+function handleCourseSearch() {
+  clearTimeout(modalSearchTimeout)
+  showCourseDropdown.value = true
+  
+  modalSearchTimeout = setTimeout(async () => {
+    if (!courseSearchQuery.value) {
+      courseSearchResults.value = []
+      courseSearchPage.value = 0
+      courseSearchTotalPages.value = 0
+      return
+    }
+    
+    try {
+      // Reset page to 0 for a brand new search
+      courseSearchPage.value = 0 
+      const query = encodeURIComponent(courseSearchQuery.value)
+
+      const res = await fetch(`http://localhost:8080/api/course/search/name?value=${query}&page=0&size=10`)
+      const data = await res.json()
+      
+      // Assign results and track total pages from backend
+      courseSearchResults.value = data.courses || data.content || data
+      courseSearchTotalPages.value = data.totalPages || 0
+      
+    } catch (error) {
+      console.error("Failed to fetch courses for autocomplete", error)
+      courseSearchResults.value = []
+    }
+  }, 300)
+}
+
+async function loadMoreCourses() {
+  if (isLoadingMoreCourses.value) return
+  isLoadingMoreCourses.value = true
+
+  try {
+    courseSearchPage.value++ 
+    const query = encodeURIComponent(courseSearchQuery.value)
+
+    const res = await fetch(`http://localhost:8080/api/course/search/name?value=${query}&page=${courseSearchPage.value}&size=10`)
+    const data = await res.json()
+    
+    const newCourses = data.courses || data.content || data
+    
+    // Append the newly fetched courses to the end of the existing list
+    courseSearchResults.value = [...courseSearchResults.value, ...newCourses]
+    
+  } catch (error) {
+    console.error("Failed to load more courses", error)
+    courseSearchPage.value-- 
+  } finally {
+    isLoadingMoreCourses.value = false
+  }
+}
+
+function selectCourse(course) {
+  form.value.courseId = course.id
+  courseSearchQuery.value = course.name
+  showCourseDropdown.value = false
+}
+
+// Hide dropdowns when clicking outside the input (using a small delay so the click registers first)
+function hideDropdowns() {
+  setTimeout(() => {
+    showStudentDropdown.value = false
+    showCourseDropdown.value = false
+  }, 200)
+}
+
 // ── PAGINATION ────────────────────────────────
 function onPageChanged(page) {
   store.dispatch('enrollment/changePage', page - 1)
@@ -75,12 +226,15 @@ function onPageChanged(page) {
 function resetPage() {
   currentPage.value = 1
 }
+
 // ── SEARCH FUNCTIONS ──────────────────────────
 
 function clearSearch() {
   searchStudentId.value = ''
   searchCourseId.value = ''
   searchId.value = ''
+  searchStudentName.value = ''
+  searchCourseName.value = ''
   store.dispatch('enrollment/fetchEnrollments', {page: 0, size: 10})
 }
 
@@ -107,6 +261,8 @@ function openCreateModal() {
   form.value = { studentId: null, courseId: null, grade: null }
   formError.value = null
   showCreateModal.value = true
+  studentSearchQuery.value = ''
+  courseSearchQuery.value = ''
 }
 
 async function onCreateSaved() {
@@ -130,12 +286,6 @@ async function onDeleteConfirmed() {
 // ── LIFECYCLE ─────────────────────────────────
 onMounted(() => {
   store.dispatch('enrollment/fetchEnrollments')
-  store.dispatch('student/fetchStudents')
-  store.dispatch('student/fetchAllStudents')
-  store.dispatch('course/fetchCourses')
-  store.dispatch('course/fetchAllCourses')
-  store.dispatch('program/fetchPrograms')
-  store.dispatch('program/fetchAllPrograms')
 })
 </script>
 
@@ -158,6 +308,17 @@ onMounted(() => {
 
     <!-- SEARCH BAR -->
     <div class="search-bar">
+      <input
+          v-model="searchStudentName"
+          placeholder="Search by student name"
+          @input="onSearchInput"
+      />
+      
+      <input
+          v-model="searchCourseName"
+          placeholder="Search by course name"
+          @input="onSearchInput"
+      />
       <input
           v-model="searchId"
           placeholder="Search by enrollment Id"
@@ -229,31 +390,67 @@ onMounted(() => {
         @save="onCreateSaved"
         @cancel="showCreateModal = false"
     >
-      <div class="form-group">
+    <div class="form-group autocomplete-container">
         <label>Student *</label>
-        <select v-model="form.studentId">
-          <option value="" disabled>Select a student</option>
-          <option
-              v-for="student in allStudents"
+        <input 
+            v-model="studentSearchQuery"
+            @input="handleStudentSearch"
+            @blur="hideDropdowns"
+            placeholder="Type to search student..."
+            class="autocomplete-input"
+        />
+
+        <ul v-if="showStudentDropdown && studentSearchResults.length > 0" class="dropdown-list">
+          <li 
+              v-for="student in studentSearchResults" 
               :key="student.id"
-              :value="student.id"
+              @mousedown.prevent="selectStudent(student)"
           >
             {{ student.firstName }} {{ student.lastName }}
-          </option>
-        </select>
+          </li>
+          
+          <li 
+              v-if="studentSearchPage < studentSearchTotalPages - 1" 
+              @mousedown.prevent="loadMoreStudents"
+              class="load-more-item"
+          >
+            {{ isLoadingMoreStudents ? 'Loading...' : 'Load more students...' }}
+          </li>
+        </ul>
+        <div v-if="showStudentDropdown && studentSearchResults.length === 0 && studentSearchQuery" class="dropdown-list empty">
+          No students found
+        </div>
       </div>
-      <div class="form-group">
+
+      <div class="form-group autocomplete-container">
         <label>Course *</label>
-        <select v-model="form.courseId">
-          <option value="" disabled>Select a course</option>
-          <option
-              v-for="course in allCourses"
+        <input 
+            v-model="courseSearchQuery"
+            @input="handleCourseSearch"
+            @blur="hideDropdowns"
+            placeholder="Type to search course..."
+            class="autocomplete-input"
+        />
+        <ul v-if="showCourseDropdown && courseSearchResults.length > 0" class="dropdown-list">
+          <li 
+              v-for="course in courseSearchResults" 
               :key="course.id"
-              :value="course.id"
+              @mousedown.prevent="selectCourse(course)"
           >
             {{ course.name }}
-          </option>
-        </select>
+          </li>
+          
+          <li 
+              v-if="courseSearchPage < courseSearchTotalPages - 1" 
+              @mousedown.prevent="loadMoreCourses"
+              class="load-more-item"
+          >
+            {{ isLoadingMoreCourses ? 'Loading...' : 'Load more courses...' }}
+          </li>
+        </ul>
+        <div v-if="showCourseDropdown && courseSearchResults.length === 0 && courseSearchQuery" class="dropdown-list empty">
+          No courses found
+        </div>
       </div>
 
       <div class="form-group">

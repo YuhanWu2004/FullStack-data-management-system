@@ -1,47 +1,55 @@
 const API_URL = 'http://localhost:8080/api/enrollment'
 
 export default {
-    async fetchEnrollments({ commit, state }, { page, size, searchStudentId, searchCourseId, searchId}={}) {
+    async fetchEnrollments({ commit, state }, { page, size, searchStudentId, searchCourseId, searchId, searchStudentName, searchCourseName } = {}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
             const currentPage = page ?? state.currentPage
             const pageSize = size ?? state.pageSize
             let url
+
+            // 1. Search by exact Enrollment ID
             if (searchId !== undefined && searchId !== null && searchId !== '') {
-                console.log('searchId: ', searchId)
                 url = `${API_URL}/${searchId}`
-                console.log("url", url)
-
-            } else if (searchStudentId && String(searchStudentId).trim() !== ''
-                && searchCourseId && String(searchCourseId).trim() !== '') {
-                console.log('StudentId  and courseId');
-
+            } 
+            // 2. Search by BOTH Student ID and Course ID
+            else if (searchStudentId && String(searchStudentId).trim() !== '' && 
+                     searchCourseId && String(searchCourseId).trim() !== '') {
                 url = `${API_URL}/search/StudentIdAndCourseId?studentId=${encodeURIComponent(searchStudentId)}&courseId=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
-                console.log("url", url)
             }
-            else if ( searchStudentId && String(searchStudentId).trim() !== '') {
-                console.log('StudentId case')
-
+            // 3. Search by Student ID only
+            else if (searchStudentId && String(searchStudentId).trim() !== '') {
                 url = `${API_URL}/search/studentId?value=${encodeURIComponent(searchStudentId)}&page=${currentPage}&size=${pageSize}`
-                console.log("url", url)
-
-            } else if (searchCourseId && String(searchCourseId).trim() !== '') {
-                url = `${API_URL}/search/courseName?value=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
-            } else {
-                console.log('ELSE case')
-
-                console.log('getting page for enrollment: ', searchId)
-                url = `${API_URL}?page=${currentPage}&size=${pageSize}`
-                console.log("url", url)
-
+            } 
+            // 4. Search by Course ID only
+            else if (searchCourseId && String(searchCourseId).trim() !== '') {
+                url = `${API_URL}/search/courseId?value=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}` 
+            } 
+            // 5. NEW: Search by Student Name (First, Last, or Full)
+            else if (searchStudentName && String(searchStudentName).trim() !== '') {
+                url = `${API_URL}/search/studentName?value=${encodeURIComponent(searchStudentName)}&page=${currentPage}&size=${pageSize}`
             }
+            // 6. NEW: Search by Course Name
+            else if (searchCourseName && String(searchCourseName).trim() !== '') {
+                url = `${API_URL}/search/courseName?value=${encodeURIComponent(searchCourseName)}&page=${currentPage}&size=${pageSize}`
+            } 
+            // 7. Default: Get all paginated
+            else {
+                url = `${API_URL}?page=${currentPage}&size=${pageSize}`
+            }
+
+            console.log("Fetching from URL:", url)
 
             const response = await fetch(url)
             const data = await response.json()
+            
+            // Fixed the logging to target the enrollments array properly
             console.log('enrollments data:', data.enrollments)
-            console.log('first enrollment:', data[0])           // ← add this
-            console.log('course data:', data[0]?.course)
+            if (data.enrollments && data.enrollments.length > 0) {
+                console.log('first enrollment:', data.enrollments[0])           
+                console.log('course data:', data.enrollments[0]?.course)
+            }
 
             commit('SET_ENROLLMENTS', data.enrollments)
             commit('SET_PAGINATION', {
@@ -51,16 +59,17 @@ export default {
                 size: data.size
             })
         } catch (error) {
-            console.log(error)
+            console.error("Fetch Error: ", error)
             commit('SET_ERROR', 'Failed to load enrollments')
         } finally {
             commit('SET_LOADING', false)
         }
     },
 
-    async changePage({ commit, dispatch, state }, page) {
-        commit('SET_PAGE', page)
-        await dispatch('fetchEnrollments', { page })
+    async changePage({ commit, dispatch, state }, payload) {
+        // Updated to pass the entire payload down so search queries aren't lost on page turns
+        commit('SET_PAGE', payload.page)
+        await dispatch('fetchEnrollments', payload)
     },
 
     async createEnrollment({ commit }, enrollmentData) {
@@ -72,7 +81,6 @@ export default {
                 course: { id: enrollmentData.courseId },
                 grade: enrollmentData.grade || null
             }
-            console.log('sending payload:', payload)
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

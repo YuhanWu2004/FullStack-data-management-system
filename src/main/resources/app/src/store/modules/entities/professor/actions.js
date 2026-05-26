@@ -15,29 +15,30 @@ export default {
             commit('SET_ERROR', 'Failed to load all students')
         }
     },
-    async fetchProfessors({ commit, state }, { page, size, searchFirstName, searchLastName, searchId }={}) {
+    async fetchProfessors({ commit, state }, { page, size, searchName, searchId }={}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
             const currentPage = page ?? state.currentPage
             const pageSize = size ?? state.pageSize
             let url
+            // 1. Search by exact ID
             if (searchId !== undefined && searchId !== null && searchId !== '') {
                 console.log('searchId: ', searchId)
                 url = `${API_URL}/${searchId}`
                 console.log("url", url)
-
-            } else if ( searchFirstName && searchFirstName.trim()) {
-                url = `${API_URL}/search/firstName?firstName=${encodeURIComponent(searchFirstName)}&page=${currentPage}&size=${pageSize}`
-            } else if (searchLastName && searchLastName.trim()) {
-                url = `${API_URL}/search/lastName?lastName=${encodeURIComponent(searchLastName)}&page=${currentPage}&size=${pageSize}`
-            } else {
+            } 
+            // 2. NEW: Unified Search by Name (First, Last, or Full)
+            else if (searchName && String(searchName).trim() !== '') {
+                url = `${API_URL}/search/name?value=${encodeURIComponent(searchName)}&page=${currentPage}&size=${pageSize}`
+                console.log("url", url)
+            } 
+            // 3. Default: Get all paginated
+            else {
                 console.log('ELSE case')
-
-                console.log('getting page: ', searchId)
+                console.log('getting page: ', currentPage)
                 url = `${API_URL}?page=${currentPage}&size=${pageSize}`
                 console.log("url", url)
-
             }
             const response = await fetch(url)
             const data = await response.json()

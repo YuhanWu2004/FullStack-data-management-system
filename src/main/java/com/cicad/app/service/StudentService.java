@@ -54,12 +54,29 @@ public class StudentService {
 		return result;
 	}
 
+
 	public Map<String, Object> searchByFirstName(String name, int page, int size) {
 		if (name == null || name.isEmpty()) {
 			throw new IllegalArgumentException("Name cannot be empty");
 		}
 		List<Student> students = studentRepository.findByFirstName(name, page, size);
 		Long total = studentRepository.countByFirstName(name);
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("students", students);
+		result.put("total", total);
+		result.put("page", page);
+		result.put("size", size);
+		result.put("totalPages", (int) Math.ceil((double) total / size));
+		return result;
+	}
+
+	public Map<String, Object> searchByName(String name, int page, int size) {
+		if (name == null || name.isEmpty()) {
+			throw new IllegalArgumentException("Name cannot be empty");
+		}
+		List<Student> students = studentRepository.findByName(name, page, size);
+		Long total = studentRepository.countByName(name);
 
 		Map<String, Object> result = new HashMap<>();
 		result.put("students", students);

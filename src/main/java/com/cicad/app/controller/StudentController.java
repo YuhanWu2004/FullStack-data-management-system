@@ -37,6 +37,13 @@ public class StudentController {
 	public Object update(@RequestBody Student sourceStudent) {
 		return studentService.update(sourceStudent);
 	}
+		
+	@RequestMapping(value = "/search/name", method= RequestMethod.GET)
+	public Object findByName(@RequestParam String value,
+	                             @RequestParam(defaultValue = "0") int page,
+	                             @RequestParam(defaultValue = "10") int size) {
+		return studentService.searchByName(value, page, size);
+	}
 
 	@RequestMapping(value = "/search/lastName", method= RequestMethod.GET)
 	public Object findByLastName(@RequestParam String value,

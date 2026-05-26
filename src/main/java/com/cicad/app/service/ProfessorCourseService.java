@@ -167,4 +167,40 @@ public class ProfessorCourseService {
         result.put("totalPages", 1);
         return result;
     }
+
+    public Map<String, Object> searchByProfessorName(String professorName, int page, int size) {
+        if (professorName == null || professorName.trim().isEmpty()) {
+            return getProfessorCoursePaginated(page, size); // Assuming this is your "getAll" paginated method
+        }
+
+        List<ProfessorCourse> assignments = professorCourseRepository.findByProfessorName(professorName, page, size);
+        Long total = professorCourseRepository.countByProfessorName(professorName);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("assignments", assignments); // Adjust key name to match your Vuex expectations
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("totalPages", total == 0 ? 0 : (int) Math.ceil((double) total / size));
+
+        return result;
+    }
+
+    public Map<String, Object> searchByCourseName(String courseName, int page, int size) {
+        if (courseName == null || courseName.trim().isEmpty()) {
+             return getProfessorCoursePaginated(page, size);
+        }
+
+        List<ProfessorCourse> assignments = professorCourseRepository.findByCourseName(courseName, page, size);
+        Long total = professorCourseRepository.countByCourseName(courseName);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("assignments", assignments);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("totalPages", total == 0 ? 0 : (int) Math.ceil((double) total / size));
+
+        return result;
+    }
 }

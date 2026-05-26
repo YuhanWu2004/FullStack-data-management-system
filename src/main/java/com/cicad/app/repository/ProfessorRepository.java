@@ -57,6 +57,32 @@ public class ProfessorRepository {
         }
     }
 
+    public List<Professor> searchByName(String name, int page, int size) {
+        String searchPattern = "%" + name.toLowerCase() + "%";
+        return entityManager.createQuery(
+                "SELECT p FROM Professor p WHERE " +
+                "LOWER(p.firstName) LIKE :name OR " +
+                "LOWER(p.lastName) LIKE :name OR " +
+                "LOWER(CONCAT(p.firstName, ' ', p.lastName)) LIKE :name", 
+                Professor.class)
+                .setParameter("name", searchPattern)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public Long countByName(String name) {
+        String searchPattern = "%" + name.toLowerCase() + "%";
+        return entityManager.createQuery(
+                "SELECT COUNT(p) FROM Professor p WHERE " +
+                "LOWER(p.firstName) LIKE :name OR " +
+                "LOWER(p.lastName) LIKE :name OR " +
+                "LOWER(CONCAT(p.firstName, ' ', p.lastName)) LIKE :name", 
+                Long.class)
+                .setParameter("name", searchPattern)
+                .getSingleResult();
+    }
+
     public List<Professor> findByLastName(String lastName, int page, int size) {
         return entityManager
                 .createQuery("SELECT p FROM Professor p WHERE p.lastName = :lastName",

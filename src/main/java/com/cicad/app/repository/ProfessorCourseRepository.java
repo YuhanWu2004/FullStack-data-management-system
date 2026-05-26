@@ -99,4 +99,56 @@ public class ProfessorCourseRepository {
                 .setMaxResults(size)
                 .getResultList();
     }
+
+    // --- Professor Name Search ---
+    public List<ProfessorCourse> findByProfessorName(String professorName, int page, int size) {
+        String searchPattern = "%" + professorName.toLowerCase() + "%";
+        return entityManager
+                .createQuery(
+                        "SELECT pc FROM ProfessorCourse pc WHERE " +
+                        "LOWER(pc.professor.firstName) LIKE :name OR " +
+                        "LOWER(pc.professor.lastName) LIKE :name OR " +
+                        "LOWER(CONCAT(pc.professor.firstName, ' ', pc.professor.lastName)) LIKE :name", 
+                        ProfessorCourse.class)
+                .setParameter("name", searchPattern)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public Long countByProfessorName(String professorName) {
+        String searchPattern = "%" + professorName.toLowerCase() + "%";
+        return entityManager
+                .createQuery(
+                        "SELECT COUNT(pc) FROM ProfessorCourse pc WHERE " +
+                        "LOWER(pc.professor.firstName) LIKE :name OR " +
+                        "LOWER(pc.professor.lastName) LIKE :name OR " +
+                        "LOWER(CONCAT(pc.professor.firstName, ' ', pc.professor.lastName)) LIKE :name", 
+                        Long.class)
+                .setParameter("name", searchPattern)
+                .getSingleResult();
+    }
+
+    // --- Course Name Search ---
+    public List<ProfessorCourse> findByCourseName(String courseName, int page, int size) {
+        String searchPattern = "%" + courseName.toLowerCase() + "%";
+        return entityManager
+                .createQuery(
+                        "SELECT pc FROM ProfessorCourse pc WHERE LOWER(pc.course.name) LIKE :name", 
+                        ProfessorCourse.class)
+                .setParameter("name", searchPattern)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public Long countByCourseName(String courseName) {
+        String searchPattern = "%" + courseName.toLowerCase() + "%";
+        return entityManager
+                .createQuery(
+                        "SELECT COUNT(pc) FROM ProfessorCourse pc WHERE LOWER(pc.course.name) LIKE :name", 
+                        Long.class)
+                .setParameter("name", searchPattern)
+                .getSingleResult();
+    }
 }

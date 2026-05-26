@@ -55,6 +55,32 @@ public class StudentRepository {
 		}
 	}
 
+	public List<Student> findByName(String name, int page, int size) {
+        String searchPattern = "%" + name.toLowerCase() + "%";
+        return entityManager.createQuery(
+                "SELECT s FROM Student s WHERE " +
+                "LOWER(s.firstName) LIKE :name OR " +
+                "LOWER(s.lastName) LIKE :name OR " +
+                "LOWER(CONCAT(s.firstName, ' ', s.lastName)) LIKE :name", 
+                Student.class)
+                .setParameter("name", searchPattern)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public Long countByName(String name) {
+        String searchPattern = "%" + name.toLowerCase() + "%";
+        return entityManager.createQuery(
+                "SELECT COUNT(s) FROM Student s WHERE " +
+                "LOWER(s.firstName) LIKE :name OR " +
+                "LOWER(s.lastName) LIKE :name OR " +
+                "LOWER(CONCAT(s.firstName, ' ', s.lastName)) LIKE :name", 
+                Long.class)
+                .setParameter("name", searchPattern)
+                .getSingleResult();
+    }
+
 
 	public List<Student> findByLastName(String lastName, int page, int size) {
 		return entityManager

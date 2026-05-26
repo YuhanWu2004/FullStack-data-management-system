@@ -14,7 +14,7 @@ export default {
         }
     },
 
-    async fetchStudents({ commit, state }, { page, size, searchFirstName, searchLastName, searchId, searchMinGpa }={}) {
+    async fetchStudents({ commit, state }, { page, size, searchName, searchId, searchMinGpa }={}) {
         console.log(searchFirstName)
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
@@ -22,36 +22,24 @@ export default {
             const currentPage = page ?? state.currentPage
             const pageSize = size ?? state.pageSize
             let url
+            // 1. Search by exact ID
             if (searchId !== undefined && searchId !== null && searchId !== '') {
-                console.log('searchId: ', searchId)
                 url = `${API_URL}/${searchId}`
-                console.log("url", url)
-
-            } else if ( searchFirstName && searchFirstName.trim()) {
-                url = `${API_URL}/search/firstName?value=${encodeURIComponent(searchFirstName)}&page=${currentPage}&size=${pageSize}`
-            } else if (searchLastName && searchLastName.trim()) {
-                url = `${API_URL}/search/lastName?value=${encodeURIComponent(searchLastName)}&page=${currentPage}&size=${pageSize}`
-            } else if (searchMinGpa && searchMinGpa >= 0 && searchMinGpa <= 4) {
-                console.log('getting gpa: ', searchMinGpa)
-
-
+            } 
+            // 2. NEW: Unified Search by Name (First, Last, or Full)
+            else if (searchName && String(searchName).trim() !== '') {
+                url = `${API_URL}/search/name?value=${encodeURIComponent(searchName)}&page=${currentPage}&size=${pageSize}`
+            } 
+            // 3. Search by Minimum GPA
+            else if (searchMinGpa !== undefined && searchMinGpa !== null && searchMinGpa >= 0 && searchMinGpa <= 4) {
                 url = `${API_URL}/search/gpaGreater?value=${searchMinGpa}&page=${currentPage}&size=${pageSize}`
-                console.log("url", url)
-
-            } else {
-                console.log('ELSE case')
-
-                console.log('getting page: ', searchId)
+            } 
+            // 4. Default: Get all paginated
+            else {
                 url = `${API_URL}?page=${currentPage}&size=${pageSize}`
-                console.log("url", url)
-
             }
-
-
             const response = await fetch(url)
             const data = await response.json()
-            console.log('students response:', data)
-
 
             commit('SET_STUDENTS', data.students)
             commit('SET_PAGINATION', {
