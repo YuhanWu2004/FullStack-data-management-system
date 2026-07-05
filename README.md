@@ -4,8 +4,8 @@ A student-course-teacher management full-stack application designed using Spring
 
 The system provides Role-based access, CRUD operations, relational data handling, and a responsive UI for managing academic data.
 
-Role - Staff
-Access to all general information, can complete enrollments and assignments.
+Role - Staff/Admin
+-- Access to all general information, can complete enrollments and assignments.
 
 - StudentView Page:
   - Present all existing students in table form
@@ -28,16 +28,16 @@ Role - Student
 - Student Profile Page:
   - Information related to the signed in Student: Program, GPA, Course Enrollments
  
-- CourseView Page: Partial feature
+- CourseView Page: (Partial feature)
   - Able to see all the available course offerings
   - Unable to make enrollments
 
-Role - Student
+Role - Professor
 
 - Professor Profile Page:
   - Information related to the signed in Professor: Basic Information, Course Assignments
 
-- CourseView Page: Partial feature
+- CourseView Page: (Partial feature)
   - Able to see all the available course offerings
   - Unable to create assignments
 
