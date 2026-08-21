@@ -1,16 +1,17 @@
-const API_URL = 'http://localhost:8080/api/student'
+import { apiFetch } from '../../../../api/http'
+const API_URL = '/api/student'
 
 export default {
 
     async fetchAllStudents({commit}) {
         commit('SET_ERROR', null)
         try {
-            const response = await fetch(`${API_URL}?page=0&size=10000`)
+            const response = await apiFetch(`${API_URL}?page=0&size=10000`)
             const data = await response.json()
 
             commit('SET_ALL_STUDENTS', data.students)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to load all students')
+            commit('SET_ERROR', error.message || 'Failed to load all students')
         }
     },
 
@@ -37,7 +38,7 @@ export default {
             else {
                 url = `${API_URL}?page=${currentPage}&size=${pageSize}`
             }
-            const response = await fetch(url)
+            const response = await apiFetch(url)
             const data = await response.json()
 
             commit('SET_STUDENTS', data.students)
@@ -48,7 +49,7 @@ export default {
                 size: data.size
             })
         } catch (error) {
-            commit('SET_ERROR', 'Failed to load students')
+            commit('SET_ERROR', error.message || 'Failed to load students')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -72,7 +73,7 @@ export default {
                 dateOfBirth: studentData.dateOfBirth || null,  // ← empty string becomes null
                 program: studentData.program || null
             }
-            const response = await fetch(API_URL, {
+            const response = await apiFetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -80,7 +81,7 @@ export default {
             const newStudent = await response.json()
             commit('ADD_STUDENT', newStudent)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to create student')
+            commit('SET_ERROR', error.message || 'Failed to create student')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -90,7 +91,7 @@ export default {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
-            const response = await fetch(API_URL, {
+            const response = await apiFetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(studentData)
@@ -98,7 +99,7 @@ export default {
             const updatedStudent = await response.json()
             commit('UPDATE_STUDENT', updatedStudent)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to update student')
+            commit('SET_ERROR', error.message || 'Failed to update student')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -108,12 +109,12 @@ export default {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
-            await fetch(`${API_URL}/${id}`, {
+            await apiFetch(`${API_URL}/${id}`, {
                 method: 'DELETE'
             })
             commit('DELETE_STUDENT', id)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to delete student')
+            commit('SET_ERROR', error.message || 'Failed to delete student')
         } finally {
             commit('SET_LOADING', false)
         }

@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:8080/api/assignment'
+import { apiFetch } from '../../../../api/http'
+const API_URL = '/api/assignment'
 
 export default {
     async fetchAssignments({ commit, state }, { page, size, searchProfessorId, searchCourseId, searchId, searchProfessorName, searchCourseName }={}) {
@@ -37,7 +38,7 @@ export default {
                 url = `${API_URL}?page=${currentPage}&size=${pageSize}`
             }
 
-            const response = await fetch(url)
+            const response = await apiFetch(url)
             const data = await response.json()
             console.log('Assignment response data:', data.assignments)
 
@@ -49,7 +50,7 @@ export default {
                 size: data.size
             })
         } catch (error) {
-            commit('SET_ERROR', 'Failed to load assignments')
+            commit('SET_ERROR', error.message || 'Failed to load assignments')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -68,7 +69,7 @@ export default {
                 professor: { id: assignmentData.professorId },
                 course: { id: assignmentData.courseId }
             }
-            const response = await fetch(API_URL, {
+            const response = await apiFetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -76,7 +77,7 @@ export default {
             const newAssignment = await response.json()
             commit('ADD_ASSIGNMENT', newAssignment)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to create assignment')
+            commit('SET_ERROR', error.message || 'Failed to create assignment')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -86,10 +87,10 @@ export default {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+            await apiFetch(`${API_URL}/${id}`, { method: 'DELETE' })
             commit('DELETE_ASSIGNMENT', id)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to delete assignment')
+            commit('SET_ERROR', error.message || 'Failed to delete assignment')
         } finally {
             commit('SET_LOADING', false)
         }

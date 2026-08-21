@@ -4,8 +4,14 @@ import com.cicad.app.entities.Course;
 import com.cicad.app.service.CourseService;
 import com.cicad.app.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * The course catalogue is readable by anyone signed in — students and professors both need
+ * to browse it — so the read handlers carry no annotation and fall through to the
+ * "/api/** is authenticated" rule in SecurityConfig. Only the writes narrow to staff.
+ */
 @RestController
 @RequestMapping("api/course")
 public class CourseController {
@@ -18,17 +24,20 @@ public class CourseController {
         return courseService.get(id);
     }
 
+    @PreAuthorize("hasRole('STAFF')")
     @RequestMapping(method = RequestMethod.POST)
     public Object create(@RequestBody Course sourceCourse) {
         return courseService.create(sourceCourse);
     }
 
+    @PreAuthorize("hasRole('STAFF')")
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     public Object delete(@PathVariable Integer id) {
         courseService.delete(id);
         return "Course deleted Successfully";
     }
 
+    @PreAuthorize("hasRole('STAFF')")
     @RequestMapping(method = RequestMethod.PUT)
     public Object update(@RequestBody Course sourceCourse) {
         return courseService.update(sourceCourse);

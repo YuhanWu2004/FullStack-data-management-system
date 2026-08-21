@@ -9,11 +9,11 @@
 <body class="app">
 <script
         type="module"
-        th:src="'http://localhost:3000/@vite/client'"
+        th:src="${viteDevServer} + '/@vite/client'"
 ></script>
 <script
         type="module"
-        th:src="'http://localhost:3000/app.main.js'"
+        th:src="${viteDevServer} + '/app.main.js'"
 ></script>
 </body>
 </html>

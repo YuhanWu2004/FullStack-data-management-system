@@ -20,6 +20,19 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <exec.maven.version>1.4.0</exec.maven.version>
 
+        <!-- Empty unless you pass -Ddb.url=…; that is what makes *IT skip itself. -->
+        <db.url/>
+
+        <!--
+          Keep this at 5.0.0. It overrides the version spring-boot-dependencies manages
+          (6.0.0), and it has to: Jetty 11.0.x is built against Servlet 5.0 and references
+          jakarta.servlet.http.HttpSessionContext, which Servlet 6.0 removed — raising it
+          fails at startup with NoClassDefFoundError.
+
+          The cost is that Spring's MockHttpServletRequest needs the Servlet 6 API, so
+          MockMvc cannot run in this project. ApiAuthorizationIT therefore drives real HTTP
+          against a real Jetty instead. Moving to Jetty 12 would lift the restriction.
+        -->
         <jakarta-servlet.version>5.0.0</jakarta-servlet.version>
         <jakarta.inject.version>2.0.0</jakarta.inject.version>
         <liquibase-core.version>4.21.1</liquibase-core.version>
@@ -59,6 +72,20 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jetty</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -110,6 +137,33 @@
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.cicad.app.Main</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--
+                      *IT tests need a database and skip themselves when db.url is unset,
+                      so running them alongside the unit tests keeps `mvn test` as the one
+                      command to remember:
+                        mvn test                  -> unit tests only, IT skipped
+                        mvn test -Ddb.url="…"     -> everything
+                    -->
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*IT.java</include>
+                    </includes>
+                    <systemPropertyVariables>
+                        <db.url>${db.url}</db.url>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -142,7 +196,7 @@
                         </executions>
                         <configuration>
                             <executable>npm</executable>
-                            <workingDirectory>./src/main/resources/pcp</workingDirectory>
+                            <workingDirectory>./src/main/resources/app</workingDirectory>
                         </configuration>
                     </plugin>
                 </plugins>

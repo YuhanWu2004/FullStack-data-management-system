@@ -1,3 +1,5 @@
+vite:
+  dev-server: http://localhost:3001
 server:
   compression:
     enabled: true

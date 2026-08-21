@@ -1,18 +1,19 @@
+import { apiFetch } from '../../../../api/http'
 import {commit} from "lodash/seq";
 
-const API_URL = 'http://localhost:8080/api/professor'
+const API_URL = '/api/professor'
 
 export default {
 
     async fetchAllProfessors({commit}) {
         commit('SET_ERROR', null)
         try {
-            const responds = await fetch(`${API_URL}?page=0&size=10000`)
+            const responds = await apiFetch(`${API_URL}?page=0&size=10000`)
             const data = await responds.json()
             console.log("fetching all professors!", data)
             commit('SET_ALL_PROFESSORS', data.professors)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to load all students')
+            commit('SET_ERROR', error.message || 'Failed to load all students')
         }
     },
     async fetchProfessors({ commit, state }, { page, size, searchName, searchId }={}) {
@@ -40,7 +41,7 @@ export default {
                 url = `${API_URL}?page=${currentPage}&size=${pageSize}`
                 console.log("url", url)
             }
-            const response = await fetch(url)
+            const response = await apiFetch(url)
             const data = await response.json()
             console.log("professor data", data.professors)
             commit('SET_PROFESSORS', data.professors)
@@ -51,7 +52,7 @@ export default {
                 size: data.size
             })
         } catch (error) {
-            commit('SET_ERROR', 'Failed to load professors')
+            commit('SET_ERROR', error.message || 'Failed to load professors')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -73,7 +74,7 @@ export default {
                 program: {id: professorData.programId}
             }
             console.log("playload", payload)
-            const response = await fetch(API_URL, {
+            const response = await apiFetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -81,7 +82,7 @@ export default {
             const newProfessor = await response.json()
             commit('ADD_PROFESSOR', newProfessor)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to create professor')
+            commit('SET_ERROR', error.message || 'Failed to create professor')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -98,7 +99,7 @@ export default {
                 program: {id: professorData.programId}
             }
             console.log("update professor", payload)
-            const response = await fetch(API_URL, {
+            const response = await apiFetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -106,7 +107,7 @@ export default {
             const updatedProfessor = await response.json()
             commit('UPDATE_PROFESSOR', updatedProfessor)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to update professor')
+            commit('SET_ERROR', error.message || 'Failed to update professor')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -116,10 +117,10 @@ export default {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+            await apiFetch(`${API_URL}/${id}`, { method: 'DELETE' })
             commit('DELETE_PROFESSOR', id)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to delete professor')
+            commit('SET_ERROR', error.message || 'Failed to delete professor')
         } finally {
             commit('SET_LOADING', false)
         }

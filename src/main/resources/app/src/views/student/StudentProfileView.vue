@@ -1,4 +1,5 @@
 <script setup>
+import { apiFetch } from '../../api/http'
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 
@@ -11,7 +12,7 @@ const loading = ref(false)
 const error = ref(null)
 
 // ── GET LOGGED IN USER ID ─────────────────────
-const userId = computed(() => store.getters['user/userId'])
+const userId = computed(() => store.getters['user/studentId'])
 
 // ── FETCH DIRECTLY FROM API ───────────────────
 async function fetchProfile() {
@@ -19,7 +20,7 @@ async function fetchProfile() {
   error.value = null
   try {
     // fetch this specific student by id
-    const response = await fetch(`http://localhost:8080/api/student/${userId.value}`)
+    const response = await apiFetch(`/api/student/${userId.value}`)
     const data = await response.json()
 
     profile.value = data.students[0]
@@ -36,8 +37,8 @@ async function fetchEnrollments() {
   try {
     console.log(userId.value)
     console.log(profile.value)
-    const response = await fetch(
-        `http://localhost:8080/api/enrollment/search/studentId?value=${userId.value}`
+    const response = await apiFetch(
+        `/api/enrollment/search/studentId?value=${userId.value}`
     )
     enrollments.value = await response.json()
     console.log('enrollments:', enrollments.value)

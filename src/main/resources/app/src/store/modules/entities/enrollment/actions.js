@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:8080/api/enrollment'
+import { apiFetch } from '../../../../api/http'
+const API_URL = '/api/enrollment'
 
 export default {
     async fetchEnrollments({ commit, state }, { page, size, searchStudentId, searchCourseId, searchId, searchStudentName, searchCourseName } = {}) {
@@ -42,7 +43,7 @@ export default {
 
             console.log("Fetching from URL:", url)
 
-            const response = await fetch(url)
+            const response = await apiFetch(url)
             const data = await response.json()
             
             // Fixed the logging to target the enrollments array properly
@@ -61,7 +62,7 @@ export default {
             })
         } catch (error) {
             console.error("Fetch Error: ", error)
-            commit('SET_ERROR', 'Failed to load enrollments')
+            commit('SET_ERROR', error.message || 'Failed to load enrollments')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -82,7 +83,7 @@ export default {
                 course: { id: enrollmentData.courseId },
                 grade: enrollmentData.grade || null
             }
-            const response = await fetch(API_URL, {
+            const response = await apiFetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -90,7 +91,7 @@ export default {
             const newEnrollment = await response.json()
             commit('ADD_ENROLLMENT', newEnrollment)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to create enrollment')
+            commit('SET_ERROR', error.message || 'Failed to create enrollment')
         } finally {
             commit('SET_LOADING', false)
         }
@@ -100,10 +101,10 @@ export default {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+            await apiFetch(`${API_URL}/${id}`, { method: 'DELETE' })
             commit('DELETE_ENROLLMENT', id)
         } catch (error) {
-            commit('SET_ERROR', 'Failed to delete enrollment')
+            commit('SET_ERROR', error.message || 'Failed to delete enrollment')
         } finally {
             commit('SET_LOADING', false)
         }

@@ -1,4 +1,5 @@
 <script setup>
+import { apiFetch } from '../api/http'
 import {ref, computed, onMounted, watch} from 'vue'
 import { useStore } from 'vuex'
 import { usePagination } from '../composables/usePagination'
@@ -103,7 +104,7 @@ function handleStudentSearch() {
       studentSearchPage.value = 0
       const query = encodeURIComponent(studentSearchQuery.value)
 
-      const res = await fetch(`http://localhost:8080/api/student/search/name?value=${query}&page=0&size=10`)
+      const res = await apiFetch(`/api/student/search/name?value=${query}&page=0&size=10`)
       const data = await res.json()
       
       studentSearchResults.value = data.students || data
@@ -125,7 +126,7 @@ async function loadMoreStudents() {
     studentSearchPage.value++ 
     const query = encodeURIComponent(studentSearchQuery.value)
 
-    const res = await fetch(`http://localhost:8080/api/student/search/name?value=${query}&page=${studentSearchPage.value}&size=10`)
+    const res = await apiFetch(`/api/student/search/name?value=${query}&page=${studentSearchPage.value}&size=10`)
     const data = await res.json()
     
     const newStudents = data.students || data.content || data
@@ -167,7 +168,7 @@ function handleCourseSearch() {
       courseSearchPage.value = 0 
       const query = encodeURIComponent(courseSearchQuery.value)
 
-      const res = await fetch(`http://localhost:8080/api/course/search/name?value=${query}&page=0&size=10`)
+      const res = await apiFetch(`/api/course/search/name?value=${query}&page=0&size=10`)
       const data = await res.json()
       
       // Assign results and track total pages from backend
@@ -189,7 +190,7 @@ async function loadMoreCourses() {
     courseSearchPage.value++ 
     const query = encodeURIComponent(courseSearchQuery.value)
 
-    const res = await fetch(`http://localhost:8080/api/course/search/name?value=${query}&page=${courseSearchPage.value}&size=10`)
+    const res = await apiFetch(`/api/course/search/name?value=${query}&page=${courseSearchPage.value}&size=10`)
     const data = await res.json()
     
     const newCourses = data.courses || data.content || data

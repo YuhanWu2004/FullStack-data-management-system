@@ -5,11 +5,16 @@ import com.cicad.app.service.ProfessorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.OptionalInt;
 
+/**
+ * A professor record here is a name and a program — directory data that appears on course
+ * listings anyway — so any signed-in user may read it. Only staff may change the roster.
+ */
 @RestController
 @RequestMapping("api/professor")
 public class ProfessorController {
@@ -24,16 +29,19 @@ public class ProfessorController {
                          @RequestParam(defaultValue = "10") int size) {
         return professorService.getProfessorsPaginated(page, size);}
 
+    @PreAuthorize("hasRole('STAFF')")
     @RequestMapping(method = RequestMethod.POST)
     public Object create(@RequestBody Professor sourceprofessor) {
         return professorService.create(sourceprofessor);
     }
 
+    @PreAuthorize("hasRole('STAFF')")
     @RequestMapping(method = RequestMethod.PUT)
     public Object update(@RequestBody Professor sourceprofessor) {
         return professorService.update(sourceprofessor);
     }
 
+    @PreAuthorize("hasRole('STAFF')")
     @RequestMapping(value="/{id}", method = RequestMethod.DELETE)
     public Object delete(@PathVariable Integer id) {
         professorService.delete(id);

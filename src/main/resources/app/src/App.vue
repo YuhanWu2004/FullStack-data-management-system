@@ -2,62 +2,56 @@
 import { computed } from 'vue'
 import { RouterView, RouterLink, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
+import { navItems } from './router/access'
 
 const store = useStore()
 const router = useRouter()
 
-// read from user module
-const role = computed(() => store.getters['user/role'])
-const name = computed(() => store.getters['user/name'])
-const canAccess = (routeName) => store.getters['user/canAccess'](routeName)
+// read from user module — all of it server-supplied via GET /api/auth/me
+const authenticated = computed(() => store.getters['user/authenticated'])
+const displayName = computed(() => store.getters['user/displayName'])
+const roleLabel = computed(() => store.getters['user/roleLabel'])
 
-// all possible sidebar links
-const allLinks = [
-  { name: 'students',   label: 'Students',   path: '/students' },
-  { name: 'courses',    label: 'Courses',     path: '/courses' },
-  { name: 'professors', label: 'Professors',  path: '/professors' },
-  { name: 'programs',   label: 'Programs',    path: '/programs' },
-  { name: 'enrollments', label: 'Enrollments',    path: '/enrollments' },
-  { name: 'assignments',   label: 'Assignments',    path: '/assignments' },
-  { name: 'studentProfile',   label: 'Student Profile',    path: '/student/studentProfileView' },
-  { name: 'professorProfile',   label: 'Professor Profile',    path: '/professor/professorProfileView' }
+/**
+ * The sidebar is derived from route meta rather than a second hand-written list, so a link
+ * can no longer point at a path that does not exist or be filtered by a name that does not
+ * match its route.
+ */
+const links = computed(() => navItems(store.getters['user/roles']))
 
-]
-
-function logout() {
-  store.dispatch('user/clearRole')
-  router.push('/')
+async function logout() {
+  await store.dispatch('user/logout')
+  router.push({ name: 'login' })
 }
 </script>
 
 <template>
   <div class="layout">
 
-    <!-- SIDEBAR — only show when role is selected -->
-    <aside class="sidebar" v-if="role">
+    <!-- SIDEBAR — only once there is a session -->
+    <aside class="sidebar" v-if="authenticated">
       <div class="sidebar-header">
         <h2>Management System</h2>
-        <p class="welcome">Hello, {{ name }}</p>
-        <p class="role-badge">{{ role }}</p>
+        <p class="welcome">Hello, {{ displayName }}</p>
+        <p class="role-badge">{{ roleLabel }}</p>
       </div>
 
       <nav>
-        <template v-for="link in allLinks" :key="link.name">
-          <RouterLink
-              v-if="canAccess(link.name)"
-              :to="link.path">
-            {{ link.label }}
-          </RouterLink>
-        </template>
+        <RouterLink
+            v-for="link in links"
+            :key="link.name"
+            :to="link.path">
+          {{ link.label }}
+        </RouterLink>
       </nav>
 
       <button @click="logout" class="logout-btn">
-        Switch Role
+        Sign out
       </button>
     </aside>
 
     <!-- CONTENT AREA -->
-    <main class="content">
+    <main class="content" :class="{ 'content-plain': !authenticated }">
       <RouterView />
     </main>
 
@@ -132,6 +126,11 @@ function logout() {
   padding: 24px;
   overflow-y: auto;
   background-color: #f5f6fa;
+}
+
+/* The login screen centres itself, so it gets no page padding to fight with. */
+.content-plain {
+  padding: 0;
 }
 
 .logout-btn {

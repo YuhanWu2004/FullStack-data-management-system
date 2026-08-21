@@ -1,4 +1,5 @@
 <script setup>
+import { apiFetch } from '../api/http'
 import {ref, computed, onMounted, watch} from 'vue'
 import { useStore } from 'vuex'
 import Pagination from '../components/Pagination.vue'
@@ -61,7 +62,7 @@ function handleProgramSearch() {
       programSearchPage.value = 0
       const query = encodeURIComponent(programSearchQuery.value)
 
-      const res = await fetch(`http://localhost:8080/api/program/search/name?value=${query}&page=0&size=10`)
+      const res = await apiFetch(`/api/program/search/name?value=${query}&page=0&size=10`)
       const data = await res.json()
 
       programSearchResults.value = data.programs || data.content || data
@@ -82,7 +83,7 @@ async function loadMorePrograms() {
     programSearchPage.value++
     const query = encodeURIComponent(programSearchQuery.value)
 
-    const res = await fetch(`http://localhost:8080/api/program/search/name?value=${query}&page=${programSearchPage.value}&size=10`)
+    const res = await apiFetch(`/api/program/search/name?value=${query}&page=${programSearchPage.value}&size=10`)
     const data = await res.json()
 
     const newPrograms = data.programs || data.content || data

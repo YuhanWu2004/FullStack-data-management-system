@@ -10,7 +10,7 @@ import {useRouter} from "vue-router";
 
 const store = useStore()
 const router = useRouter()
-const role = computed(() => store.getters['user/role'])
+const isStaff = computed(() => store.getters['user/isStaff'])
 
 const courses = computed(() => store.getters['course/courses'])
 const loading = computed(() => store.getters['course/loading'])
@@ -171,7 +171,7 @@ onMounted(() => {
         <p class="total-count">Total: {{ totalItems }} courses</p>
       </div>
 
-      <div class="header-actions" v-if="role === 'staff'">
+      <div class="header-actions" v-if="isStaff">
         <RouterLink to="/enrollments" class="nav-btn">
           Manage Enrollments
         </RouterLink>
@@ -183,18 +183,14 @@ onMounted(() => {
         </button>
       </div>
 
-      <div class="header-actions" v-if="role === 'student'">
-        <RouterLink to="/enrollments" class="nav-btn">
-          Manage Enrollments
-        </RouterLink>
-      </div>
-
-      <div class="header-actions" v-if="role === 'professor'">
-        <RouterLink to="/assignments" class="nav-btn">
-          Manage Assignments
-        </RouterLink>
-      </div>
-
+      <!--
+        A student used to be offered "Manage Enrollments" and a professor "Manage
+        Assignments" from here, but both of those pages are staff-only in the permission
+        matrix — the links only appeared to work because the route guard was not enforcing
+        anything. Following one now bounces straight back, so the honest thing is not to
+        offer it. Enrolling a student and assigning a professor are registrar actions;
+        a student's own courses live on their profile page.
+      -->
     </div>
     <!-- ERROR -->
     <p v-if="error" class="error-message">{{ error }}</p>
@@ -226,7 +222,7 @@ onMounted(() => {
         <tr>
           <th>ID</th>
           <th>Course Name</th>
-          <th v-if="role === 'staff'">Actions</th>
+          <th v-if="isStaff">Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -234,7 +230,7 @@ onMounted(() => {
         <tr v-for="course in courses" :key="course.id">
           <td>{{ course.id }}</td>
           <td>{{ course.name }}</td>
-          <td  v-if="role === 'staff'" class="actions">
+          <td  v-if="isStaff" class="actions">
             <button @click="openEditModal(course)" class="edit-btn">
               Edit
             </button>

@@ -1,3 +1,9 @@
 databaseChangeLog:
   - include:
       file: db/changelog/00001-create-tables.yml
+  - include:
+      file: db/changelog/00002-backfill-missing-schema.yml
+  - include:
+      file: db/changelog/00003-create-users-roles.yml
+  - include:
+      file: db/changelog/00004-retrofit-professor-course-fks.yml

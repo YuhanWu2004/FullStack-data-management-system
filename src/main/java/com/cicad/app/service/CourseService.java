@@ -2,6 +2,7 @@ package com.cicad.app.service;
 
 import com.cicad.app.entities.Course;
 import com.cicad.app.repository.CourseRepository;
+import com.cicad.app.repository.ProfessorCourseRepository;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,9 @@ public class CourseService {
 
     @Autowired
     private CourseRepository courseRepository;
+
+    @Autowired
+    private ProfessorCourseRepository professorCourseRepository;
 
     public Course get(Integer id) {
         return courseRepository.get(id);
@@ -113,6 +117,9 @@ public class CourseService {
     public void delete(Integer id) {
         Course course = courseRepository.get(id);
         if (course != null ) {
+            // Teaching assignments must go first; without this they survive the course
+            // and become rows pointing at a COURSE_ID that no longer exists.
+            professorCourseRepository.deleteByCourseId(id);
             courseRepository.delete(id);
         }
     }

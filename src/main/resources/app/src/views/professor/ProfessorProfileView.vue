@@ -1,4 +1,5 @@
 <script setup>
+import { apiFetch } from '../../api/http'
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 
@@ -10,14 +11,14 @@ const assignments = ref([])
 const loading = ref(false)
 const error = ref(null)
 
-const userId = computed(() => store.getters['user/userId'])
+const userId = computed(() => store.getters['user/professorId'])
 
 async function fetchProfile() {
   loading.value = true
   error.value = null
   try {
     // fetch this specific student by id
-    const response = await fetch(`http://localhost:8080/api/professor/${userId.value}`)
+    const response = await apiFetch(`/api/professor/${userId.value}`)
     const data = await response.json()
 
     profile.value = data.professors[0]
@@ -34,8 +35,8 @@ async function fetchAssignments() {
   try {
     console.log(userId.value)
     console.log(profile.value)
-    const response = await fetch(
-        `http://localhost:8080/api/assignment/search/professorId?value=${userId.value}`
+    const response = await apiFetch(
+        `/api/assignment/search/professorId?value=${userId.value}`
     )
     assignments.value = await response.json()
     console.log('assignments:', assignments.value)

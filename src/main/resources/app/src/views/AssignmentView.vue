@@ -1,4 +1,5 @@
 <script setup>
+import { apiFetch } from '../api/http'
 import {ref, computed, onMounted, watch} from 'vue'
 import { useStore } from 'vuex'
 import { usePagination } from '../composables/usePagination'
@@ -74,7 +75,7 @@ function handleProfessorSearch() {
       professorSearchPage.value = 0
       const query = encodeURIComponent(professorSearchQuery.value)
 
-      const res = await fetch(`http://localhost:8080/api/professor/search/name?value=${query}&page=0&size=10`)
+      const res = await apiFetch(`/api/professor/search/name?value=${query}&page=0&size=10`)
       const data = await res.json()
       
       professorSearchResults.value = data.professors || data.content || data
@@ -94,7 +95,7 @@ async function loadMoreProfessors() {
     professorSearchPage.value++ 
     const query = encodeURIComponent(professorSearchQuery.value)
 
-    const res = await fetch(`http://localhost:8080/api/professor/search/name?value=${query}&page=${professorSearchPage.value}&size=10`)
+    const res = await apiFetch(`/api/professor/search/name?value=${query}&page=${professorSearchPage.value}&size=10`)
     const data = await res.json()
     
     const newProfessors = data.professors || data.content || data
@@ -130,7 +131,7 @@ function handleCourseSearch() {
       courseSearchPage.value = 0
       const query = encodeURIComponent(courseSearchQuery.value)
 
-      const res = await fetch(`http://localhost:8080/api/course/search/name?value=${query}&page=0&size=10`)
+      const res = await apiFetch(`/api/course/search/name?value=${query}&page=0&size=10`)
       const data = await res.json()
       
       courseSearchResults.value = data.courses || data.content || data
@@ -150,7 +151,7 @@ async function loadMoreCourses() {
     courseSearchPage.value++ 
     const query = encodeURIComponent(courseSearchQuery.value)
 
-    const res = await fetch(`http://localhost:8080/api/course/search/name?value=${query}&page=${courseSearchPage.value}&size=10`)
+    const res = await apiFetch(`/api/course/search/name?value=${query}&page=${courseSearchPage.value}&size=10`)
     const data = await res.json()
     
     const newCourses = data.courses || data.content || data

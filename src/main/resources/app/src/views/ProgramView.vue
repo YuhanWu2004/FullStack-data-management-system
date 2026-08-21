@@ -1,4 +1,5 @@
 <script setup>
+import { apiFetch } from '../api/http'
 import {ref, computed, onMounted, watch} from 'vue'
 import { useStore } from 'vuex'
 import Pagination from '../components/Pagination.vue'
@@ -10,7 +11,7 @@ const selectedProgram = ref(null)
 
 
 // ── READ FROM STORE ───────────────────────────
-const role = computed(() => store.getters['user/role'])
+const isStaff = computed(() => store.getters['user/isStaff'])
 const programs = computed(() => store.getters['program/programs'])
 const students = computed(() => store.getters['student/students'])
 const loading = computed(() => store.getters['program/loading'])
@@ -104,7 +105,7 @@ function handleStudentSearch() {
       studentSearchPage.value = 0
       const query = encodeURIComponent(studentSearchQuery.value)
 
-      const res = await fetch(`http://localhost:8080/api/student/search/name?value=${query}&page=0&size=10`)
+      const res = await apiFetch(`/api/student/search/name?value=${query}&page=0&size=10`)
       const data = await res.json()
 
       studentSearchResults.value = data.students || data
@@ -126,7 +127,7 @@ async function loadMoreStudents() {
     studentSearchPage.value++
     const query = encodeURIComponent(studentSearchQuery.value)
 
-    const res = await fetch(`http://localhost:8080/api/student/search/name?value=${query}&page=${studentSearchPage.value}&size=10`)
+    const res = await apiFetch(`/api/student/search/name?value=${query}&page=${studentSearchPage.value}&size=10`)
     const data = await res.json()
 
     const newStudents = data.students || data.content || data
@@ -168,7 +169,7 @@ function handleProgramSearch() {
       programSearchPage.value = 0
       const query = encodeURIComponent(programSearchQuery.value)
 
-      const res = await fetch(`http://localhost:8080/api/program/search/name?value=${query}&page=0&size=10`)
+      const res = await apiFetch(`/api/program/search/name?value=${query}&page=0&size=10`)
       const data = await res.json()
 
       // Assign results and track total pages from backend
@@ -190,7 +191,7 @@ async function loadMoreCourses() {
     programSearchPage.value++
     const query = encodeURIComponent(programSearchQuery.value)
 
-    const res = await fetch(`http://localhost:8080/api/program/search/name?value=${query}&page=${programSearchPage.value}&size=10`)
+    const res = await apiFetch(`/api/program/search/name?value=${query}&page=${programSearchPage.value}&size=10`)
     const data = await res.json()
 
     const newPrograms = data.programs || data.content || data
@@ -336,7 +337,7 @@ onMounted(() => {
         <h1>Programs</h1>
         <p class="total-count">Total: {{ totalItems }} programs</p>
       </div>
-      <div class="header-actions" v-if="role === 'staff'">
+      <div class="header-actions" v-if="isStaff">
       <button @click="openCreateModal" class="add-btn">
         + Add Program
       </button>
@@ -363,7 +364,7 @@ onMounted(() => {
           <th>ID</th>
           <th>Program Name</th>
           <th>Enrollments</th>
-          <th v-if="role === 'staff'">Actions</th>
+          <th v-if="isStaff">Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -371,7 +372,7 @@ onMounted(() => {
           <td>{{ program.id }}</td>
           <td>{{ program.name }}</td>
           <td>{{ getStudentCount(program.id) }}</td>
-          <td v-if="role === 'staff'" class="actions">
+          <td v-if="isStaff" class="actions">
             <button @click="openEditModal(program)" class="edit-btn">Edit</button>
             <button @click="openDeleteModal(program)" class="delete-btn">Delete</button>
           </td>

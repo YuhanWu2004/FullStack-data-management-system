@@ -55,6 +55,13 @@ public class ProfessorCourseRepository {
         }
     }
 
+    public int deleteByCourseId(Integer courseId) {
+        return entityManager
+                .createQuery("DELETE FROM ProfessorCourse pc WHERE pc.course.id = :courseId")
+                .setParameter("courseId", courseId)
+                .executeUpdate();
+    }
+
     public List<ProfessorCourse> findByProfessorId(Integer professorId, int page, int size) {
         return entityManager.createQuery(
                 "SELECT pc FROM ProfessorCourse pc WHERE pc.professor.id = :professorId", ProfessorCourse.class)
