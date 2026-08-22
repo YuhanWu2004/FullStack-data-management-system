@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-terms-1
+      author: APP
+      changes:
+        - sql:
+            sql: >
+              IF (NOT EXISTS(SELECT *
+                             FROM INFORMATION_SCHEMA.TABLES
+                             WHERE TABLE_SCHEMA = 'APP' AND TABLE_NAME = 'TERMS'))
+                  BEGIN
+                      CREATE TABLE TERMS
+                      (
+                          ID         INT IDENTITY,
+                          NAME       NVARCHAR(31)  NOT NULL,
+                          START_DATE DATE,
+                          END_DATE   DATE,
+                          IS_CURRENT BIT           NOT NULL CONSTRAINT DF_TERMS_IS_CURRENT DEFAULT 0,
+                          PRIMARY KEY (ID),
+                          CONSTRAINT UQ_TERMS_NAME UNIQUE (NAME)
+                      )
+                  END
+
+  - changeSet:
+      id: seed-terms-1
+      author: APP
+      changes:
+        # "Legacy" is what every pre-existing enrollment/assignment row gets backfilled
+        # onto in 00006 — it's not a real academic term, it's the label for "predates
+        # this feature." The current term is a placeholder; a registrar renames it (or
+        # adds the real one and flips IS_CURRENT) through the Terms admin screen.
+        - sql:
+            sql: >
+              IF NOT EXISTS (SELECT 1 FROM TERMS WHERE NAME = 'Legacy')
+                  BEGIN
+                      INSERT INTO TERMS (NAME, IS_CURRENT) VALUES ('Legacy', 0)
+                  END
+
+              IF NOT EXISTS (SELECT 1 FROM TERMS WHERE IS_CURRENT = 1)
+                  BEGIN
+                      INSERT INTO TERMS (NAME, IS_CURRENT) VALUES ('Fall 2026', 1)
+                  END

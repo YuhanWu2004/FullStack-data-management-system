@@ -2,29 +2,31 @@ import { apiFetch } from '../../../../api/http'
 const API_URL = '/api/assignment'
 
 export default {
-    async fetchAssignments({ commit, state }, { page, size, searchProfessorId, searchCourseId, searchId, searchProfessorName, searchCourseName }={}) {
+    async fetchAssignments({ commit, state }, { page, size, searchProfessorId, searchCourseId, searchId, searchProfessorName, searchCourseName, termId }={}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
             const currentPage = page ?? state.currentPage
             const pageSize = size ?? state.pageSize
+            // Only the two id-scoped lookups below carry a term dimension on the backend.
+            const termParam = termId !== undefined && termId !== null ? `&termId=${termId}` : ''
             let url
             // 1. Exact ID
             if (searchId !== undefined && searchId !== null && searchId !== '') {
                 url = `${API_URL}/${searchId}`
-            } 
+            }
             // 2. Both IDs
             else if (searchProfessorId && String(searchProfessorId).trim() !== '' && searchCourseId && String(searchCourseId).trim() !== '') {
                 url = `${API_URL}/search/ProfessorIdAndCourseId?professorId=${encodeURIComponent(searchProfessorId)}&courseId=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
             }
             // 3. Professor ID
             else if (searchProfessorId && String(searchProfessorId).trim() !== '') {
-                url = `${API_URL}/search/professorId?value=${encodeURIComponent(searchProfessorId)}&page=${currentPage}&size=${pageSize}`
-            } 
+                url = `${API_URL}/search/professorId?value=${encodeURIComponent(searchProfessorId)}&page=${currentPage}&size=${pageSize}${termParam}`
+            }
             // 4. Course ID
             else if (searchCourseId && String(searchCourseId).trim() !== '') {
                 url = `${API_URL}/search/courseId?value=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
-            } 
+            }
             // 5. NEW: Professor Name
             else if (searchProfessorName && String(searchProfessorName).trim() !== '') {
                 url = `${API_URL}/search/professorName?professorName=${encodeURIComponent(searchProfessorName)}&page=${currentPage}&size=${pageSize}`
@@ -32,10 +34,10 @@ export default {
             // 6. NEW: Course Name
             else if (searchCourseName && String(searchCourseName).trim() !== '') {
                 url = `${API_URL}/search/courseName?courseName=${encodeURIComponent(searchCourseName)}&page=${currentPage}&size=${pageSize}`
-            } 
+            }
             // 7. Default All
             else {
-                url = `${API_URL}?page=${currentPage}&size=${pageSize}`
+                url = `${API_URL}?page=${currentPage}&size=${pageSize}${termParam}`
             }
 
             const response = await apiFetch(url)

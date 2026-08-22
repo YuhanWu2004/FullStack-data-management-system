@@ -15,8 +15,9 @@ public class StudentCourseController {
     @PreAuthorize("hasRole('STAFF')")
     @RequestMapping(method = RequestMethod.GET)
     public Object getAll(@RequestParam(defaultValue = "0") int page,
-                         @RequestParam(defaultValue = "10") int size) {
-        return studentCourseService.getStudentCoursePaginated(page, size);}
+                         @RequestParam(defaultValue = "10") int size,
+                         @RequestParam(required = false) Integer termId) {
+        return studentCourseService.getStudentCoursePaginated(page, size, termId);}
 
     @PreAuthorize("@access.canViewEnrollment(#id)")
     @RequestMapping(value="/{id}", method = RequestMethod.GET)
@@ -52,9 +53,10 @@ public class StudentCourseController {
     @RequestMapping(value="/search/studentId", method = RequestMethod.GET)
     public Object findByStudentId(@RequestParam Integer value,
                                   @RequestParam(defaultValue = "0") int page,
-                                  @RequestParam(defaultValue = "10") int size) {
+                                  @RequestParam(defaultValue = "10") int size,
+                                  @RequestParam(required = false) Integer termId) {
 
-        return studentCourseService.findByStudentId(value, page, size);
+        return studentCourseService.findByStudentId(value, page, size, termId);
     }
 
     @PreAuthorize("hasRole('STAFF')")

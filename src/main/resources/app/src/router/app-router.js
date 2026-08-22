@@ -13,6 +13,7 @@ import ProfessorView from '../views/ProfessorView.vue'
 import ProgramView from '../views/ProgramView.vue'
 import StudentProfileView from '../views/student/StudentProfileView.vue'
 import ProfessorProfileView from '../views/professor/ProfessorProfileView.vue'
+import TermsView from '../views/TermsView.vue'
 
 /**
  * `meta.roles` is the access rule, `meta.label` + `meta.nav` build the sidebar. Adding a
@@ -71,6 +72,12 @@ const routes = [
     name: 'assignments',
     component: AssignmentView,
     meta: { roles: ['staff'], label: 'Assignments', nav: true }
+  },
+  {
+    path: '/terms',
+    name: 'terms',
+    component: TermsView,
+    meta: { roles: ['staff'], label: 'Terms', nav: true }
   },
 
   // ── Student ──────────────────────────────────

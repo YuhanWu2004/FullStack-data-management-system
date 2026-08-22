@@ -1,6 +1,6 @@
 <script setup>
 import { apiFetch } from '../../api/http'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 
 const store = useStore()
@@ -12,6 +12,14 @@ const loading = ref(false)
 const error = ref(null)
 
 const userId = computed(() => store.getters['user/professorId'])
+
+// ── TERM FILTER ────────────────────────────────
+// Defaults to "what am I teaching this term" rather than every assignment ever made,
+// mirroring StudentProfileView. The history toggle is what keeps the default filter
+// from hiding real data by omission.
+const showAllHistory = ref(false)
+const currentTermId = computed(() => store.getters['term/currentTermId'])
+const currentTermName = computed(() => store.getters['term/current']?.name ?? '')
 
 async function fetchProfile() {
   loading.value = true
@@ -33,15 +41,15 @@ async function fetchProfile() {
 
 async function fetchAssignments() {
   try {
-    console.log(userId.value)
-    console.log(profile.value)
+    const termParam = showAllHistory.value || !currentTermId.value
+        ? ''
+        : `&termId=${currentTermId.value}`
     const response = await apiFetch(
-        `/api/assignment/search/professorId?value=${userId.value}`
+        `/api/assignment/search/professorId?value=${userId.value}&size=100${termParam}`
     )
     assignments.value = await response.json()
-    console.log('assignments:', assignments.value)
   } catch (err) {
-    console.log('enrollment error:', err)
+    console.log('assignment error:', err)
   }
 }
 // ── LIFECYCLE ─────────────────────────────────
@@ -50,9 +58,12 @@ onMounted(async () => {
     error.value = 'No user id found — please log in again'
     return
   }
+  await store.dispatch('term/fetchCurrentTerm')
   await fetchProfile()
   await fetchAssignments()
 })
+
+watch(showAllHistory, fetchAssignments)
 
 </script>
 
@@ -91,24 +102,32 @@ onMounted(async () => {
 
   <!-- MY COURSES -->
   <div class="courses-section">
-    <h2>My Teachings</h2>
-    <table v-if="assignments.size > 0">
+    <div class="courses-header">
+      <h2>My Teachings</h2>
+      <label class="history-toggle">
+        <input type="checkbox" v-model="showAllHistory" />
+        Show full history (not just {{ currentTermName || 'the current term' }})
+      </label>
+    </div>
+    <table v-if="assignments.total > 0">
       <thead>
       <tr>
         <th>Course ID</th>
         <th>Course Name</th>
+        <th>Term</th>
       </tr>
       </thead>
       <tbody>
       <tr v-for="assignment in assignments.assignments" :key="assignment.id">
         <td>{{ assignment.course?.id }}</td>
         <td>{{ assignment.course?.name }}</td>
+        <td>{{ assignment.term?.name ?? '—' }}</td>
       </tr>
       </tbody>
     </table>
 
     <p v-else-if="!loading" class="empty-state">
-      Not enrolled in any courses yet
+      Not teaching any courses {{ showAllHistory ? 'yet' : `in ${currentTermName || 'the current term'}` }}
     </p>
   </div>
 
@@ -162,7 +181,25 @@ onMounted(async () => {
 }
 
 .courses-section h2 {
-  margin: 0 0 16px 0;
+  margin: 0;
   color: #2c3e50;
+}
+
+.courses-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #57606f;
+  cursor: pointer;
 }
 </style>

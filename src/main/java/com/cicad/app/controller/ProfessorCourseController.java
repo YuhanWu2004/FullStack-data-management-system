@@ -23,8 +23,9 @@ public class ProfessorCourseController {
     @PreAuthorize("hasRole('STAFF')")
     @RequestMapping(method = RequestMethod.GET)
     public Object getAll(@RequestParam(defaultValue = "0") int page,
-                         @RequestParam(defaultValue = "10") int size) {
-        return professorCourseService.getProfessorCoursePaginated(page, size);}
+                         @RequestParam(defaultValue = "10") int size,
+                         @RequestParam(required = false) Integer termId) {
+        return professorCourseService.getProfessorCoursePaginated(page, size, termId);}
 
     @PreAuthorize("hasRole('STAFF')")
     @RequestMapping(value="/{id}", method = RequestMethod.GET)
@@ -55,8 +56,9 @@ public class ProfessorCourseController {
     @RequestMapping(value="/search/professorId", method = RequestMethod.GET)
     public Object findByProfessorId(@RequestParam Integer value,
                                     @RequestParam(defaultValue = "0") int page,
-                                    @RequestParam(defaultValue = "10") int size) {
-        return professorCourseService.findByProfessorId(value, page, size);
+                                    @RequestParam(defaultValue = "10") int size,
+                                    @RequestParam(required = false) Integer termId) {
+        return professorCourseService.findByProfessorId(value, page, size, termId);
     }
 
     // Who teaches this course — visible to any signed-in user.

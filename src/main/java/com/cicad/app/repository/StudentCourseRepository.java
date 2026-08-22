@@ -24,17 +24,24 @@ public class StudentCourseRepository {
                 ("SELECT sc FROM StudentCourse sc", StudentCourse.class).getResultList();
     }
 
-    public List<StudentCourse> getPage(int page, int size) {
+    public List<StudentCourse> getPage(int page, int size, Integer termId) {
         return entityManager
-                .createQuery("SELECT sc FROM StudentCourse sc", StudentCourse.class)
+                .createQuery(
+                        "SELECT sc FROM StudentCourse sc WHERE (:termId IS NULL OR sc.term.id = :termId)",
+                        StudentCourse.class)
+                .setParameter("termId", termId)
                 .setFirstResult(page * size)
                 .setMaxResults(size)
-                .getResultList();}
+                .getResultList();
+    }
 
 
-    public Long countAll() {
+    public Long countAll(Integer termId) {
         return entityManager
-                .createQuery("SELECT COUNT(sc) FROM StudentCourse sc", Long.class)
+                .createQuery(
+                        "SELECT COUNT(sc) FROM StudentCourse sc WHERE (:termId IS NULL OR sc.term.id = :termId)",
+                        Long.class)
+                .setParameter("termId", termId)
                 .getSingleResult();
     }
 
@@ -56,21 +63,26 @@ public class StudentCourseRepository {
         }
     }
 
-    public List<StudentCourse> findByStudentId(Integer studentId, int page, int size) {
+    public List<StudentCourse> findByStudentId(Integer studentId, int page, int size, Integer termId) {
         return entityManager
-                .createQuery
-                        ("SELECT sc FROM StudentCourse sc WHERE sc.student.id = :id", StudentCourse.class)
+                .createQuery(
+                        "SELECT sc FROM StudentCourse sc WHERE sc.student.id = :id " +
+                                "AND (:termId IS NULL OR sc.term.id = :termId)",
+                        StudentCourse.class)
                 .setParameter("id", studentId)
+                .setParameter("termId", termId)
                 .setFirstResult(page * size)
                 .setMaxResults(size)
                 .getResultList();
     }
-    public Long countByStudentId(Integer studentId) {
+    public Long countByStudentId(Integer studentId, Integer termId) {
         return entityManager
-                .createQuery
-                        ("SELECT COUNT(sc) FROM StudentCourse sc WHERE sc.student.id = :id", Long.class)
-
+                .createQuery(
+                        "SELECT COUNT(sc) FROM StudentCourse sc WHERE sc.student.id = :id " +
+                                "AND (:termId IS NULL OR sc.term.id = :termId)",
+                        Long.class)
                 .setParameter("id", studentId)
+                .setParameter("termId", termId)
                 .getSingleResult();
     }
 

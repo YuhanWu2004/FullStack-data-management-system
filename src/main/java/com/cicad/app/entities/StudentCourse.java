@@ -20,6 +20,10 @@ public class StudentCourse {
     @JoinColumn(name = "COURSE_ID")
     private Course course;
 
+    @ManyToOne
+    @JoinColumn(name = "TERM_ID")
+    private Term term;
+
     @Column(name = "GRADE")
     private Float grade;
 
@@ -53,5 +57,13 @@ public class StudentCourse {
 
     public void setGrade(Float grade) {
         this.grade = grade;
+    }
+
+    public Term getTerm() {
+        return term;
+    }
+
+    public void setTerm(Term term) {
+        this.term = term;
     }
 }

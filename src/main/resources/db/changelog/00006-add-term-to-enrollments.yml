@@ -1,0 +1,76 @@
+databaseChangeLog:
+  # Adds TERM_ID to the two join tables and backfills every existing row onto the
+  # "Legacy" term seeded in 00005, so the column can exist without claiming to know a
+  # term for history that predates this feature. TERM_ID stays nullable — see the plan
+  # document (WorkFlow/co-op-sample-app/enrollment-terms-semesters-plan-*.md) for why.
+  #
+  # The foreign key is added in the same changeset as the backfill: by the time the
+  # ALTER TABLE ... ADD CONSTRAINT runs, every row already has a valid TERM_ID, so
+  # there's no gap where a bad value could sneak in between backfill and constraint —
+  # unlike 00004, which had to defer its FK because rows it did not control already
+  # violated it.
+
+  # Each step below is its own `sql` change rather than one block, because SQL Server
+  # compiles a batch in full before executing any of it and resolves column names on
+  # already-existing tables at compile time — an UPDATE naming TERM_ID in the same batch
+  # that adds it fails with "Invalid column name" (207). Separate changes are separate
+  # batches, so the column exists by the time the backfill is compiled. They remain in one
+  # changeSet, so they still commit or roll back together.
+
+  - changeSet:
+      id: add-term-to-student-courses-1
+      author: APP
+      changes:
+        - sql:
+            sql: >
+              IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+                             WHERE TABLE_SCHEMA = 'APP'
+                               AND TABLE_NAME = 'STUDENT_COURSES'
+                               AND COLUMN_NAME = 'TERM_ID')
+                  BEGIN
+                      ALTER TABLE STUDENT_COURSES ADD TERM_ID INT NULL
+                  END
+        - sql:
+            sql: >
+              UPDATE STUDENT_COURSES
+              SET TERM_ID = (SELECT ID FROM TERMS WHERE NAME = 'Legacy')
+              WHERE TERM_ID IS NULL
+        - sql:
+            sql: >
+              IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+                             WHERE CONSTRAINT_SCHEMA = 'APP' AND CONSTRAINT_NAME = 'FK_SC_TI_T')
+                  BEGIN
+                      ALTER TABLE STUDENT_COURSES
+                          ADD CONSTRAINT FK_SC_TI_T
+                              FOREIGN KEY (TERM_ID)
+                                  REFERENCES TERMS
+                  END
+
+  - changeSet:
+      id: add-term-to-professor-courses-1
+      author: APP
+      changes:
+        - sql:
+            sql: >
+              IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+                             WHERE TABLE_SCHEMA = 'APP'
+                               AND TABLE_NAME = 'PROFESSOR_COURSES'
+                               AND COLUMN_NAME = 'TERM_ID')
+                  BEGIN
+                      ALTER TABLE PROFESSOR_COURSES ADD TERM_ID INT NULL
+                  END
+        - sql:
+            sql: >
+              UPDATE PROFESSOR_COURSES
+              SET TERM_ID = (SELECT ID FROM TERMS WHERE NAME = 'Legacy')
+              WHERE TERM_ID IS NULL
+        - sql:
+            sql: >
+              IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+                             WHERE CONSTRAINT_SCHEMA = 'APP' AND CONSTRAINT_NAME = 'FK_PC_TI_T')
+                  BEGIN
+                      ALTER TABLE PROFESSOR_COURSES
+                          ADD CONSTRAINT FK_PC_TI_T
+                              FOREIGN KEY (TERM_ID)
+                                  REFERENCES TERMS
+                  END

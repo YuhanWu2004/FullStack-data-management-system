@@ -1,0 +1,147 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-roles-1
+      author: APP
+      changes:
+        - sql:
+            sql: >
+              IF (NOT EXISTS(SELECT *
+                             FROM INFORMATION_SCHEMA.TABLES
+                             WHERE TABLE_SCHEMA = 'APP' AND TABLE_NAME = 'ROLES'))
+                  BEGIN
+                      CREATE TABLE ROLES
+                      (
+                          ID   INT IDENTITY,
+                          NAME NVARCHAR(31) NOT NULL,
+                          PRIMARY KEY (ID),
+                          CONSTRAINT UQ_ROLES_NAME UNIQUE (NAME)
+                      )
+                  END
+
+  - changeSet:
+      id: create-users-1
+      author: APP
+      changes:
+        - sql:
+            sql: >
+              IF (NOT EXISTS(SELECT *
+                             FROM INFORMATION_SCHEMA.TABLES
+                             WHERE TABLE_SCHEMA = 'APP' AND TABLE_NAME = 'USERS'))
+                  BEGIN
+                      CREATE TABLE USERS
+                      (
+                          ID            INT IDENTITY,
+                          USERNAME      NVARCHAR(63)  NOT NULL,
+                          PASSWORD_HASH NVARCHAR(100) NOT NULL,
+                          DISPLAY_NAME  NVARCHAR(63),
+                          ENABLED       BIT           NOT NULL CONSTRAINT DF_USERS_ENABLED DEFAULT 1,
+                          STUDENT_ID    INT,
+                          PROFESSOR_ID  INT,
+                          PRIMARY KEY (ID),
+                          CONSTRAINT UQ_USERS_USERNAME UNIQUE (USERNAME)
+                      )
+                  END
+
+              IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+                             WHERE CONSTRAINT_SCHEMA = 'APP' AND CONSTRAINT_NAME = 'FK_U_SI_S')
+                  BEGIN
+                      ALTER TABLE USERS
+                          ADD CONSTRAINT FK_U_SI_S
+                              FOREIGN KEY (STUDENT_ID)
+                                  REFERENCES STUDENTS
+                  END
+
+              IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+                             WHERE CONSTRAINT_SCHEMA = 'APP' AND CONSTRAINT_NAME = 'FK_U_PI_P')
+                  BEGIN
+                      ALTER TABLE USERS
+                          ADD CONSTRAINT FK_U_PI_P
+                              FOREIGN KEY (PROFESSOR_ID)
+                                  REFERENCES PROFESSORS
+                  END
+
+  - changeSet:
+      id: create-user-roles-1
+      author: APP
+      changes:
+        - sql:
+            sql: >
+              IF (NOT EXISTS(SELECT *
+                             FROM INFORMATION_SCHEMA.TABLES
+                             WHERE TABLE_SCHEMA = 'APP' AND TABLE_NAME = 'USER_ROLES'))
+                  BEGIN
+                      CREATE TABLE USER_ROLES
+                      (
+                          USER_ID INT NOT NULL,
+                          ROLE_ID INT NOT NULL,
+                          PRIMARY KEY (USER_ID, ROLE_ID),
+                          CONSTRAINT FK_UR_UI_U FOREIGN KEY (USER_ID) REFERENCES USERS (ID),
+                          CONSTRAINT FK_UR_RI_R FOREIGN KEY (ROLE_ID) REFERENCES ROLES (ID)
+                      )
+                  END
+
+  - changeSet:
+      id: seed-roles-1
+      author: APP
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO ROLES (NAME)
+              SELECT v.NAME
+              FROM (VALUES ('ROLE_STUDENT'), ('ROLE_PROFESSOR'), ('ROLE_STAFF')) AS v(NAME)
+              WHERE NOT EXISTS (SELECT 1 FROM ROLES r WHERE r.NAME = v.NAME)
+
+  - changeSet:
+      id: seed-users-1
+      author: APP
+      changes:
+        # Development seed accounts. All three share the password 'changeit' —
+        # change them before this runs anywhere but a dev database.
+        # demo.stu / demo.prof are linked to the lowest existing STUDENTS / PROFESSORS
+        # row so the profile pages have something to show; on an empty database the
+        # links stay NULL until you point them at real rows.
+        - sql:
+            sql: >
+              IF NOT EXISTS (SELECT 1 FROM USERS WHERE USERNAME = 'admin')
+                  BEGIN
+                      INSERT INTO USERS (USERNAME, PASSWORD_HASH, DISPLAY_NAME, ENABLED)
+                      VALUES ('admin',
+                              '$2a$10$7pFMEgojxLN9ZrshYivD4.JS3G0abHFfXRvRZdpDE9iz5FgQdsrda',
+                              'Registrar Admin', 1)
+                  END
+
+              IF NOT EXISTS (SELECT 1 FROM USERS WHERE USERNAME = 'demo.stu')
+                  BEGIN
+                      INSERT INTO USERS (USERNAME, PASSWORD_HASH, DISPLAY_NAME, ENABLED, STUDENT_ID)
+                      VALUES ('demo.stu',
+                              '$2a$10$zISZHl55vzflHtO4ZkUJXu/W59ZAh8nrNEd/VwOkg9n6jHPK73Kcu',
+                              'Demo Student', 1,
+                              (SELECT MIN(ID) FROM STUDENTS))
+                  END
+
+              IF NOT EXISTS (SELECT 1 FROM USERS WHERE USERNAME = 'demo.prof')
+                  BEGIN
+                      INSERT INTO USERS (USERNAME, PASSWORD_HASH, DISPLAY_NAME, ENABLED, PROFESSOR_ID)
+                      VALUES ('demo.prof',
+                              '$2a$10$fifE0/WVwPoh4y3K/ZRtUuCQy5zM3TnvvKuGCe17escacD2mNCvru',
+                              'Demo Professor', 1,
+                              (SELECT MIN(ID) FROM PROFESSORS))
+                  END
+
+  - changeSet:
+      id: seed-user-roles-1
+      author: APP
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO USER_ROLES (USER_ID, ROLE_ID)
+              SELECT u.ID, r.ID
+              FROM (VALUES ('admin', 'ROLE_STAFF'),
+                           ('demo.stu', 'ROLE_STUDENT'),
+                           ('demo.prof', 'ROLE_PROFESSOR')) AS v(USERNAME, ROLE_NAME)
+                       JOIN USERS u ON u.USERNAME = v.USERNAME
+                       JOIN ROLES r ON r.NAME = v.ROLE_NAME
+              WHERE NOT EXISTS (SELECT 1
+                                FROM USER_ROLES ur
+                                WHERE ur.USER_ID = u.ID
+                                  AND ur.ROLE_ID = r.ID)

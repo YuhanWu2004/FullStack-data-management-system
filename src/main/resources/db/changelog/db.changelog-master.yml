@@ -7,3 +7,7 @@ databaseChangeLog:
       file: db/changelog/00003-create-users-roles.yml
   - include:
       file: db/changelog/00004-retrofit-professor-course-fks.yml
+  - include:
+      file: db/changelog/00005-create-terms.yml
+  - include:
+      file: db/changelog/00006-add-term-to-enrollments.yml

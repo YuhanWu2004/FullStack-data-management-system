@@ -19,12 +19,21 @@ const totalPages = computed(() => store.getters['assignment/totalPages'])
 const currentPage = computed(() => store.getters['assignment/currentPage'])
 const pageSize = computed(() => store.getters['assignment/pageSize'])
 
+const terms = computed(() => store.getters['term/terms'])
+
 // ── SEARCH ────────────────────────────────────
 const searchProfessorId = ref('')
 const searchProfessorName = ref('')
 const searchCourseId = ref('')
 const searchCourseName = ref('')
 const searchId = ref('')
+
+// ── TERM FILTER ────────────────────────────────
+// '' is the sentinel for "All terms (full history)" — a plain <select> can't bind null.
+const selectedTermId = ref('')
+function termIdForFetch() {
+  return selectedTermId.value === '' ? null : selectedTermId.value
+}
 
 // ── MODAL ─────────────────────────────────────
 const showCreateModal = ref(false)
@@ -180,7 +189,7 @@ function hideDropdowns() {
 let searchTimeout = null
 
 watch(
-    [searchProfessorId, searchCourseId, searchId, searchProfessorName, searchCourseName],
+    [searchProfessorId, searchCourseId, searchId, searchProfessorName, searchCourseName, selectedTermId],
     () => {
       clearTimeout(searchTimeout)
 
@@ -192,7 +201,8 @@ watch(
           searchCourseId: searchCourseId.value,
           searchId: searchId.value,
           searchProfessorName: searchProfessorName.value,
-          searchCourseName: searchCourseName.value
+          searchCourseName: searchCourseName.value,
+          termId: termIdForFetch()
         })
       }, 500)
     }
@@ -213,7 +223,9 @@ function clearSearch() {
   searchId.value = ''
   searchProfessorName.value = ''
   searchCourseName.value = ''
-  store.dispatch('assignment/fetchAssignments', {page: 0, size: 10})
+  // Term stays as-is — "Clear" resets the free-text/id search fields, not which term
+  // you're looking at.
+  store.dispatch('assignment/fetchAssignments', {page: 0, size: 10, termId: termIdForFetch()})
 }
 
 function onSearchInput() {
@@ -263,8 +275,14 @@ async function onDeleteConfirmed() {
 }
 
 // ── LIFECYCLE ─────────────────────────────────
-onMounted(() => {
-  store.dispatch('assignment/fetchAssignments')
+onMounted(async () => {
+  await store.dispatch('term/fetchTerms')
+  await store.dispatch('term/fetchCurrentTerm')
+  const currentTermId = store.getters['term/currentTermId']
+  if (currentTermId) {
+    selectedTermId.value = currentTermId
+  }
+  await store.dispatch('assignment/fetchAssignments', { page: 0, size: 10, termId: termIdForFetch() })
 })
 </script>
 
@@ -284,6 +302,12 @@ onMounted(() => {
     <p v-if="error" class="error-message">{{ error }}</p>
 
 <div class="search-bar">
+      <select v-model="selectedTermId">
+        <option value="">All terms (full history)</option>
+        <option v-for="term in terms" :key="term.id" :value="term.id">
+          {{ term.name }}{{ term.current ? ' (current)' : '' }}
+        </option>
+      </select>
       <input v-model="searchProfessorName" placeholder="professor name" @input="onSearchInput" />
       <input v-model="searchCourseName" placeholder="course name" @input="onSearchInput" />
       <input v-model="searchId" placeholder="assignment Id" @input="onSearchInput" />

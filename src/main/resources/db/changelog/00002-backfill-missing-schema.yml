@@ -1,0 +1,92 @@
+databaseChangeLog:
+  # Brings version control back in line with the database.
+  #
+  # APP.DATABASECHANGELOG lists 16 applied changesets; the repo only ever contained
+  # 00001. The tables and columns below reached the shared database through changesets
+  # (create-professor-table, add-grades, create-professor-courses, widen-gpa-column-1)
+  # that were never committed, so `git clone` + create_database.sql produced a schema the
+  # code could not run against.
+  #
+  # Everything here is guarded, so this file is a no-op on the already-migrated database
+  # and builds the real schema on a fresh one. Foreign keys are declared inline with
+  # CREATE TABLE rather than bolted on afterwards — retrofitting a constraint onto a table
+  # that already holds data fails if any of that data violates it, which is exactly what
+  # PROFESSOR_COURSES does today (see 00004).
+
+  - changeSet:
+      id: backfill-professors-1
+      author: APP
+      changes:
+        - sql:
+            # FK_PR_PI_P is the name the constraint already carries on the shared
+            # database; reusing it keeps a fresh database identical rather than merely
+            # equivalent.
+            sql: >
+              IF (NOT EXISTS(SELECT *
+                             FROM INFORMATION_SCHEMA.TABLES
+                             WHERE TABLE_SCHEMA = 'APP' AND TABLE_NAME = 'PROFESSORS'))
+                  BEGIN
+                      CREATE TABLE PROFESSORS
+                      (
+                          ID         INT IDENTITY,
+                          FIRST_NAME NVARCHAR(31),
+                          LAST_NAME  NVARCHAR(31),
+                          PROGRAM_ID INT,
+                          PRIMARY KEY (ID),
+                          CONSTRAINT FK_PR_PI_P FOREIGN KEY (PROGRAM_ID) REFERENCES PROGRAMS
+                      )
+                  END
+
+  - changeSet:
+      id: backfill-professor-courses-1
+      author: APP
+      changes:
+        - sql:
+            sql: >
+              IF (NOT EXISTS(SELECT *
+                             FROM INFORMATION_SCHEMA.TABLES
+                             WHERE TABLE_SCHEMA = 'APP' AND TABLE_NAME = 'PROFESSOR_COURSES'))
+                  BEGIN
+                      CREATE TABLE PROFESSOR_COURSES
+                      (
+                          ID           INT IDENTITY,
+                          PROFESSOR_ID INT,
+                          COURSE_ID    INT,
+                          PRIMARY KEY (ID),
+                          CONSTRAINT FK_PC_PI_P FOREIGN KEY (PROFESSOR_ID) REFERENCES PROFESSORS,
+                          CONSTRAINT FK_PC_CI_C FOREIGN KEY (COURSE_ID) REFERENCES COURSES
+                      )
+                  END
+
+  - changeSet:
+      id: backfill-enrollment-grade-1
+      author: APP
+      changes:
+        # The StudentCourse entity maps a GRADE column that 00001 never created.
+        - sql:
+            sql: >
+              IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+                             WHERE TABLE_SCHEMA = 'APP'
+                               AND TABLE_NAME = 'STUDENT_COURSES'
+                               AND COLUMN_NAME = 'GRADE')
+                  BEGIN
+                      ALTER TABLE STUDENT_COURSES ADD GRADE FLOAT
+                  END
+
+  - changeSet:
+      id: backfill-widen-gpa-1
+      author: APP
+      changes:
+        # 00001 created GPA as DECIMAL(1,1), which caps the value at 0.9 and rejects every
+        # real GPA. The shared database is already DECIMAL(2,1); this makes a fresh one
+        # match. Widening is safe on existing rows.
+        - sql:
+            sql: >
+              IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+                         WHERE TABLE_SCHEMA = 'APP'
+                           AND TABLE_NAME = 'STUDENTS'
+                           AND COLUMN_NAME = 'GPA'
+                           AND (NUMERIC_PRECISION < 2 OR NUMERIC_SCALE <> 1))
+                  BEGIN
+                      ALTER TABLE STUDENTS ALTER COLUMN GPA DECIMAL(2, 1)
+                  END

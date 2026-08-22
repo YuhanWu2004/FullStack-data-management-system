@@ -3,9 +3,11 @@ package com.cicad.app.service;
 import com.cicad.app.entities.Course;
 import com.cicad.app.entities.Student;
 import com.cicad.app.entities.StudentCourse;
+import com.cicad.app.entities.Term;
 import com.cicad.app.repository.CourseRepository;
 import com.cicad.app.repository.StudentCourseRepository;
 import com.cicad.app.repository.StudentRepository;
+import com.cicad.app.repository.TermRepository;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,8 @@ public class StudentCourseService {
     private CourseRepository courseRepository;
     @Autowired
     private StudentRepository studentRepository;
+    @Autowired
+    private TermRepository termRepository;
 
     public StudentCourse get(Integer id) {return studentCourseRepository.get(id);}
 
@@ -50,9 +54,9 @@ public class StudentCourseService {
     }
 
 
-    public Map<String, Object> getStudentCoursePaginated(int page, int size) {
-        List<StudentCourse> enrollments = studentCourseRepository.getPage(page, size);
-        Long total = studentCourseRepository.countAll();
+    public Map<String, Object> getStudentCoursePaginated(int page, int size, Integer termId) {
+        List<StudentCourse> enrollments = studentCourseRepository.getPage(page, size, termId);
+        Long total = studentCourseRepository.countAll(termId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("enrollments", enrollments);
@@ -89,6 +93,23 @@ public class StudentCourseService {
             throw new RuntimeException("Course not found");
         }
         actualStudentCourse.setCourse(course);
+
+        // term: an explicit id lets staff enroll into a specific (e.g. past) term;
+        // otherwise default to whichever term is current. A brand-new enrollment with no
+        // term at all would be invisible to every "current courses" view by default.
+        Term term;
+        if (sourceStudentCourse.getTerm() != null && sourceStudentCourse.getTerm().getId() != null) {
+            term = termRepository.get(sourceStudentCourse.getTerm().getId());
+            if (term == null) {
+                throw new RuntimeException("Term not found");
+            }
+        } else {
+            term = termRepository.findCurrent();
+            if (term == null) {
+                throw new RuntimeException("No current term is set — ask staff to set one before enrolling students");
+            }
+        }
+        actualStudentCourse.setTerm(term);
 
         // set grade only if provided and valid
         Float grade = sourceStudentCourse.getGrade();
@@ -140,7 +161,7 @@ public class StudentCourseService {
     }
 
 
-    public   Map<String, Object> findByStudentId(Integer studentId, int page, int size) {
+    public   Map<String, Object> findByStudentId(Integer studentId, int page, int size, Integer termId) {
         Map<String, Object> result = new HashMap<>();
 
         Student student = studentRepository.get(studentId);
@@ -153,8 +174,8 @@ public class StudentCourseService {
             return result;
         }
 
-        List<StudentCourse> enrollments = studentCourseRepository.findByStudentId(studentId, page, size);
-        Long total = studentCourseRepository.countByStudentId(studentId);
+        List<StudentCourse> enrollments = studentCourseRepository.findByStudentId(studentId, page, size, termId);
+        Long total = studentCourseRepository.countByStudentId(studentId, termId);
 
         result.put("enrollments", enrollments);
         result.put("total", total);
@@ -202,7 +223,7 @@ public class StudentCourseService {
 
         // If the search string is empty/null, return empty results or redirect to getStudentCoursePaginated
         if (studentName == null || studentName.trim().isEmpty()) {
-            return getStudentCoursePaginated(page, size);
+            return getStudentCoursePaginated(page, size, null);
         }
 
         List<StudentCourse> enrollments = studentCourseRepository.findByStudentName(studentName, page, size);
@@ -221,7 +242,7 @@ public class StudentCourseService {
         Map<String, Object> result = new HashMap<>();
 
         if (courseName == null || courseName.trim().isEmpty()) {
-             return getStudentCoursePaginated(page, size);
+             return getStudentCoursePaginated(page, size, null);
         }
 
         List<StudentCourse> enrollments = studentCourseRepository.findByCourseName(courseName, page, size);

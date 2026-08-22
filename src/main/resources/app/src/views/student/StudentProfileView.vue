@@ -1,6 +1,6 @@
 <script setup>
 import { apiFetch } from '../../api/http'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 
 const store = useStore()
@@ -13,6 +13,13 @@ const error = ref(null)
 
 // ── GET LOGGED IN USER ID ─────────────────────
 const userId = computed(() => store.getters['user/studentId'])
+
+// ── TERM FILTER ────────────────────────────────
+// Defaults to "my courses this term" — the review that preceded this feature flagged
+// showing every enrollment ever made, with no filter, as easy to misread as "current".
+const showAllHistory = ref(false)
+const currentTermId = computed(() => store.getters['term/currentTermId'])
+const currentTermName = computed(() => store.getters['term/current']?.name ?? '')
 
 // ── FETCH DIRECTLY FROM API ───────────────────
 async function fetchProfile() {
@@ -35,13 +42,13 @@ async function fetchProfile() {
 
 async function fetchEnrollments() {
   try {
-    console.log(userId.value)
-    console.log(profile.value)
+    const termParam = showAllHistory.value || !currentTermId.value
+        ? ''
+        : `&termId=${currentTermId.value}`
     const response = await apiFetch(
-        `/api/enrollment/search/studentId?value=${userId.value}`
+        `/api/enrollment/search/studentId?value=${userId.value}&size=100${termParam}`
     )
     enrollments.value = await response.json()
-    console.log('enrollments:', enrollments.value)
   } catch (err) {
     console.log('enrollment error:', err)
   }
@@ -53,9 +60,12 @@ onMounted(async () => {
     error.value = 'No user id found — please log in again'
     return
   }
+  await store.dispatch('term/fetchCurrentTerm')
   await fetchProfile()
   await fetchEnrollments()
 })
+
+watch(showAllHistory, fetchEnrollments)
 </script>
 
 <template>
@@ -96,12 +106,19 @@ onMounted(async () => {
 
     <!-- MY COURSES -->
     <div class="courses-section">
-      <h2>My Courses</h2>
-      <table v-if="enrollments.size > 0">
+      <div class="courses-header">
+        <h2>My Courses</h2>
+        <label class="history-toggle">
+          <input type="checkbox" v-model="showAllHistory" />
+          Show full history (not just {{ currentTermName || 'the current term' }})
+        </label>
+      </div>
+      <table v-if="enrollments.total > 0">
         <thead>
         <tr>
           <th>Course ID</th>
           <th>Course Name</th>
+          <th>Term</th>
           <th>Grade</th>
         </tr>
         </thead>
@@ -109,13 +126,14 @@ onMounted(async () => {
         <tr v-for="enrollment in enrollments.enrollments" :key="enrollment.id">
           <td>{{ enrollment.course?.id }}</td>
           <td>{{ enrollment.course?.name }}</td>
+          <td>{{ enrollment.term?.name ?? '—' }}</td>
           <td>{{ enrollment.grade ?? 'Not graded' }}</td>
         </tr>
         </tbody>
       </table>
 
       <p v-else-if="!loading" class="empty-state">
-        Not enrolled in any courses yet
+        Not enrolled in any courses {{ showAllHistory ? 'yet' : `in ${currentTermName || 'the current term'}` }}
       </p>
     </div>
 
@@ -165,7 +183,25 @@ onMounted(async () => {
 }
 
 .courses-section h2 {
-  margin: 0 0 16px 0;
+  margin: 0;
   color: #2c3e50;
+}
+
+.courses-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #57606f;
+  cursor: pointer;
 }
 </style>

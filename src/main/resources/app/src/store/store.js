@@ -7,6 +7,7 @@ import enrollment from "./modules/entities/enrollment";
 import assignment from "./modules/entities/assignment";
 import professor from "./modules/entities/professor";
 import program from "./modules/entities/program";
+import term from "./modules/entities/term";
 const debug = process.env.NODE_ENV !== 'production';
 
 export default createStore({
@@ -20,6 +21,7 @@ export default createStore({
     program,
     assignment,
     enrollment,
+    term,
 
   }
 });

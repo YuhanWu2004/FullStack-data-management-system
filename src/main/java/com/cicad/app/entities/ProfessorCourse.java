@@ -19,6 +19,10 @@ public class ProfessorCourse {
      @JoinColumn(name = "COURSE_ID")
      private Course course;
 
+     @ManyToOne
+     @JoinColumn(name = "TERM_ID")
+     private Term term;
+
     public Integer getId() {
         return id;
     }
@@ -41,5 +45,13 @@ public class ProfessorCourse {
 
     public void setCourse(Course course) {
         this.course = course;
+    }
+
+    public Term getTerm() {
+        return term;
+    }
+
+    public void setTerm(Term term) {
+        this.term = term;
     }
 }

@@ -19,6 +19,8 @@ const totalPages = computed(() => store.getters['assignment/totalPages'])
 const currentPage = computed(() => store.getters['assignment/currentPage'])
 const pageSize = computed(() => store.getters['assignment/pageSize'])
 
+const terms = computed(() => store.getters['term/terms'])
+
 // ── SEARCH ────────────────────────────────────
 const searchStudentId = ref('')
 const searchCourseId = ref('')
@@ -26,6 +28,14 @@ const searchId = ref('')
 
 const searchStudentName = ref('')
 const searchCourseName = ref('')
+
+// ── TERM FILTER ────────────────────────────────
+// '' is the sentinel for "All terms (full history)" — every enrollment ever made,
+// across every term, since a plain <select> can't bind directly to null.
+const selectedTermId = ref('')
+function termIdForFetch() {
+  return selectedTermId.value === '' ? null : selectedTermId.value
+}
 
 // ── MODAL ─────────────────────────────────────
 const showCreateModal = ref(false)
@@ -67,7 +77,7 @@ const isLoadingMoreCourses = ref(false)
 // ── SEARCH FUNCTIONS ──────────────────────────
 let searchTimeout = null
 watch(
-    [searchStudentId, searchCourseId, searchId, searchStudentName, searchCourseName],
+    [searchStudentId, searchCourseId, searchId, searchStudentName, searchCourseName, selectedTermId],
     () => {
       clearTimeout(searchTimeout)
 
@@ -79,7 +89,8 @@ watch(
           searchCourseId: searchCourseId.value,
           searchId: searchId.value,
           searchStudentName: searchStudentName.value,
-          searchCourseName: searchCourseName.value
+          searchCourseName: searchCourseName.value,
+          termId: termIdForFetch()
         })
       }, 300)
     }
@@ -236,7 +247,9 @@ function clearSearch() {
   searchId.value = ''
   searchStudentName.value = ''
   searchCourseName.value = ''
-  store.dispatch('enrollment/fetchEnrollments', {page: 0, size: 10})
+  // Term stays as-is — "Clear" resets the free-text/id search fields, not which term
+  // you're looking at.
+  store.dispatch('enrollment/fetchEnrollments', {page: 0, size: 10, termId: termIdForFetch()})
 }
 
 function onSearchInput() {
@@ -285,8 +298,17 @@ async function onDeleteConfirmed() {
 }
 
 // ── LIFECYCLE ─────────────────────────────────
-onMounted(() => {
-  store.dispatch('enrollment/fetchEnrollments')
+onMounted(async () => {
+  await store.dispatch('term/fetchTerms')
+  await store.dispatch('term/fetchCurrentTerm')
+  const currentTermId = store.getters['term/currentTermId']
+  if (currentTermId) {
+    selectedTermId.value = currentTermId
+  }
+  // selectedTermId change already triggers the watch() above, which fetches — but on the
+  // very first mount there's nothing to watch yet if no current term was set, so fetch
+  // explicitly either way.
+  await store.dispatch('enrollment/fetchEnrollments', { page: 0, size: 10, termId: termIdForFetch() })
 })
 </script>
 
@@ -309,6 +331,12 @@ onMounted(() => {
 
     <!-- SEARCH BAR -->
     <div class="search-bar">
+      <select v-model="selectedTermId">
+        <option value="">All terms (full history)</option>
+        <option v-for="term in terms" :key="term.id" :value="term.id">
+          {{ term.name }}{{ term.current ? ' (current)' : '' }}
+        </option>
+      </select>
       <input
           v-model="searchStudentName"
           placeholder="Search by student name"
@@ -483,5 +511,19 @@ onMounted(() => {
 <style scoped>
 .enrollment-page {
   padding: 24px;
+}
+
+.search-bar select {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.search-bar select:focus {
+  outline: none;
+  border-color: #3498db;
 }
 </style>

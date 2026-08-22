@@ -4,6 +4,7 @@ import com.cicad.app.entities.*;
 import com.cicad.app.repository.CourseRepository;
 import com.cicad.app.repository.ProfessorCourseRepository;
 import com.cicad.app.repository.ProfessorRepository;
+import com.cicad.app.repository.TermRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,8 @@ public class ProfessorCourseService {
     private CourseRepository courseRepository;
     @Autowired
     private ProfessorRepository professorRepository;
+    @Autowired
+    private TermRepository termRepository;
 
     public ProfessorCourse get(Integer id) {
         return professorCourseRepository.get(id);
@@ -51,9 +54,9 @@ public class ProfessorCourseService {
 
     }
 
-    public Map<String, Object> getProfessorCoursePaginated(int page, int size) {
-        List<ProfessorCourse> assignments = professorCourseRepository.getPage(page, size);
-        Long total = professorCourseRepository.countAll();
+    public Map<String, Object> getProfessorCoursePaginated(int page, int size, Integer termId) {
+        List<ProfessorCourse> assignments = professorCourseRepository.getPage(page, size, termId);
+        Long total = professorCourseRepository.countAll(termId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("assignments", assignments);
@@ -78,6 +81,22 @@ public class ProfessorCourseService {
         Professor professor = professorRepository.get(sourceProfessorCourse.getProfessor().getId());
         actualProfessorCourse.setProfessor(professor);
 
+        // term: an explicit id lets staff assign into a specific (e.g. past) term;
+        // otherwise default to whichever term is current.
+        Term term;
+        if (sourceProfessorCourse.getTerm() != null && sourceProfessorCourse.getTerm().getId() != null) {
+            term = termRepository.get(sourceProfessorCourse.getTerm().getId());
+            if (term == null) {
+                throw new RuntimeException("Term not found");
+            }
+        } else {
+            term = termRepository.findCurrent();
+            if (term == null) {
+                throw new RuntimeException("No current term is set — ask staff to set one before assigning professors");
+            }
+        }
+        actualProfessorCourse.setTerm(term);
+
         return professorCourseRepository.create(actualProfessorCourse);
     }
 
@@ -96,7 +115,7 @@ public class ProfessorCourseService {
         }
     }
 
-    public Map<String, Object> findByProfessorId(Integer id, int page, int size) {
+    public Map<String, Object> findByProfessorId(Integer id, int page, int size, Integer termId) {
         Map<String, Object> result = new HashMap<>();
         Professor professor = professorRepository.get(id);
         if (professor == null) {
@@ -107,8 +126,8 @@ public class ProfessorCourseService {
             result.put("totalPages", 0);
             return result;
         }
-        List<ProfessorCourse> assignments = professorCourseRepository.findByProfessorId(id, page, size);
-        Long total = professorCourseRepository.countByProfessorId(id);
+        List<ProfessorCourse> assignments = professorCourseRepository.findByProfessorId(id, page, size, termId);
+        Long total = professorCourseRepository.countByProfessorId(id, termId);
         result.put("assignments", assignments);
         result.put("total", total);
         result.put("page", page);
@@ -170,7 +189,7 @@ public class ProfessorCourseService {
 
     public Map<String, Object> searchByProfessorName(String professorName, int page, int size) {
         if (professorName == null || professorName.trim().isEmpty()) {
-            return getProfessorCoursePaginated(page, size); // Assuming this is your "getAll" paginated method
+            return getProfessorCoursePaginated(page, size, null); // Assuming this is your "getAll" paginated method
         }
 
         List<ProfessorCourse> assignments = professorCourseRepository.findByProfessorName(professorName, page, size);
@@ -188,7 +207,7 @@ public class ProfessorCourseService {
 
     public Map<String, Object> searchByCourseName(String courseName, int page, int size) {
         if (courseName == null || courseName.trim().isEmpty()) {
-             return getProfessorCoursePaginated(page, size);
+             return getProfessorCoursePaginated(page, size, null);
         }
 
         List<ProfessorCourse> assignments = professorCourseRepository.findByCourseName(courseName, page, size);

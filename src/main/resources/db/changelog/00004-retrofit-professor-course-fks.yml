@@ -1,0 +1,81 @@
+databaseChangeLog:
+  # PROFESSOR_COURSES on the shared database has no foreign keys at all, so nothing has
+  # been stopping teaching assignments from pointing at rows that no longer exist — 5 of
+  # its 82 rows currently reference a COURSE_ID with no matching course. (Deleting a course
+  # does not clear its assignments, and with no constraint the database did not object.)
+  #
+  # A constraint cannot be added while the data violates it, and quietly deleting other
+  # people's rows is not this migration's call to make. So each FK is guarded by a
+  # precondition that counts the offending rows:
+  #
+  #   * data already clean  -> the constraint is added
+  #   * data still dirty    -> the changeset is skipped with a message and left unrecorded,
+  #                            so it is retried on the next startup
+  #
+  # To let the COURSE_ID constraint land, first decide what those 5 rows should be. Either
+  # point them at real courses, or drop them:
+  #
+  #   DELETE FROM APP.PROFESSOR_COURSES
+  #   WHERE COURSE_ID IS NOT NULL
+  #     AND NOT EXISTS (SELECT 1 FROM APP.COURSES c WHERE c.ID = COURSE_ID);
+  #
+  # A fresh database gets both constraints inline from 00002 and never reaches these.
+
+  - changeSet:
+      id: retrofit-professor-course-professor-fk-1
+      author: APP
+      preConditions:
+        - onFail: CONTINUE
+        - onFailMessage: >
+            PROFESSOR_COURSES has rows referencing a missing professor, or FK_PC_PI_P
+            already exists. Skipping; will retry on next startup.
+        - and:
+            - sqlCheck:
+                expectedResult: 0
+                sql: >
+                  SELECT COUNT(*) FROM APP.PROFESSOR_COURSES pc
+                  WHERE pc.PROFESSOR_ID IS NOT NULL
+                    AND NOT EXISTS (SELECT 1 FROM APP.PROFESSORS p WHERE p.ID = pc.PROFESSOR_ID)
+            - not:
+                - foreignKeyConstraintExists:
+                    foreignKeyName: FK_PC_PI_P
+                    schemaName: APP
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: FK_PC_PI_P
+            baseTableSchemaName: APP
+            baseTableName: PROFESSOR_COURSES
+            baseColumnNames: PROFESSOR_ID
+            referencedTableSchemaName: APP
+            referencedTableName: PROFESSORS
+            referencedColumnNames: ID
+
+  - changeSet:
+      id: retrofit-professor-course-course-fk-1
+      author: APP
+      preConditions:
+        - onFail: CONTINUE
+        - onFailMessage: >
+            PROFESSOR_COURSES has rows referencing a missing course, or FK_PC_CI_C already
+            exists. Clean up the orphaned rows (see the comment in this file) and restart
+            to add the constraint.
+        - and:
+            - sqlCheck:
+                expectedResult: 0
+                sql: >
+                  SELECT COUNT(*) FROM APP.PROFESSOR_COURSES pc
+                  WHERE pc.COURSE_ID IS NOT NULL
+                    AND NOT EXISTS (SELECT 1 FROM APP.COURSES c WHERE c.ID = pc.COURSE_ID)
+            - not:
+                - foreignKeyConstraintExists:
+                    foreignKeyName: FK_PC_CI_C
+                    schemaName: APP
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: FK_PC_CI_C
+            baseTableSchemaName: APP
+            baseTableName: PROFESSOR_COURSES
+            baseColumnNames: COURSE_ID
+            referencedTableSchemaName: APP
+            referencedTableName: COURSES
+            referencedColumnNames: ID

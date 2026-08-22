@@ -2,31 +2,34 @@ import { apiFetch } from '../../../../api/http'
 const API_URL = '/api/enrollment'
 
 export default {
-    async fetchEnrollments({ commit, state }, { page, size, searchStudentId, searchCourseId, searchId, searchStudentName, searchCourseName } = {}) {
+    async fetchEnrollments({ commit, state }, { page, size, searchStudentId, searchCourseId, searchId, searchStudentName, searchCourseName, termId } = {}) {
         commit('SET_LOADING', true)
         commit('SET_ERROR', null)
         try {
             const currentPage = page ?? state.currentPage
             const pageSize = size ?? state.pageSize
+            // Only the two id-scoped lookups below carry a term dimension on the backend —
+            // free-text name search stays a separate, un-scoped axis, same as before.
+            const termParam = termId !== undefined && termId !== null ? `&termId=${termId}` : ''
             let url
 
             // 1. Search by exact Enrollment ID
             if (searchId !== undefined && searchId !== null && searchId !== '') {
                 url = `${API_URL}/${searchId}`
-            } 
+            }
             // 2. Search by BOTH Student ID and Course ID
-            else if (searchStudentId && String(searchStudentId).trim() !== '' && 
+            else if (searchStudentId && String(searchStudentId).trim() !== '' &&
                      searchCourseId && String(searchCourseId).trim() !== '') {
                 url = `${API_URL}/search/StudentIdAndCourseId?studentId=${encodeURIComponent(searchStudentId)}&courseId=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
             }
             // 3. Search by Student ID only
             else if (searchStudentId && String(searchStudentId).trim() !== '') {
-                url = `${API_URL}/search/studentId?value=${encodeURIComponent(searchStudentId)}&page=${currentPage}&size=${pageSize}`
-            } 
+                url = `${API_URL}/search/studentId?value=${encodeURIComponent(searchStudentId)}&page=${currentPage}&size=${pageSize}${termParam}`
+            }
             // 4. Search by Course ID only
             else if (searchCourseId && String(searchCourseId).trim() !== '') {
-                url = `${API_URL}/search/courseId?value=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}` 
-            } 
+                url = `${API_URL}/search/courseId?value=${encodeURIComponent(searchCourseId)}&page=${currentPage}&size=${pageSize}`
+            }
             // 5. NEW: Search by Student Name (First, Last, or Full)
             else if (searchStudentName && String(searchStudentName).trim() !== '') {
                 url = `${API_URL}/search/studentName?value=${encodeURIComponent(searchStudentName)}&page=${currentPage}&size=${pageSize}`
@@ -35,10 +38,10 @@ export default {
             else if (searchCourseName && String(searchCourseName).trim() !== '') {
                 console.log("hiii")
                 url = `${API_URL}/search/courseName?value=${encodeURIComponent(searchCourseName)}&page=${currentPage}&size=${pageSize}`
-            } 
+            }
             // 7. Default: Get all paginated
             else {
-                url = `${API_URL}?page=${currentPage}&size=${pageSize}`
+                url = `${API_URL}?page=${currentPage}&size=${pageSize}${termParam}`
             }
 
             console.log("Fetching from URL:", url)
