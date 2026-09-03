@@ -1,4 +1,4 @@
-# FullStack-data-management-system
+# Academic-management-system
 
 A student-course-teacher management full-stack application designed using Spring boot and Vue.js.
 
